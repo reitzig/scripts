@@ -1,0 +1,107 @@
+#!/bin/bash
+#
+# This script converts TikZ images to SVG.
+# It needs
+# * pdflatex with packages tikz, standalone
+# * Inkscape
+#
+# Copyright 2013 Raphael Reitzig
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+# Call with a list of filenames, e.g.
+#   tikz2svg a.tikz b.tikz c.tikz
+# Each file will be augmented so it can be translated into a PDF using
+# pdflatex and the LaTeX package standalone. The PDF is then converted
+# to SVG with ImageMagick; you can easily adapt the script to output other
+# formats. In case something goes wrong, you find a log file in the tmp
+# directory (see corresponding setting).
+#
+# Input files need to have the following format (aside from comment lines):
+#
+#   \begin{tikzpicture}[<parameters>]
+#     <content>
+#   \end{tikzpicture}
+#
+# If you need additional packages for an image, you can add lines of the form
+#
+#   %p% <preamblematter>
+#
+# whose content is added to the augmented document's preamble.
+#
+# A simple example is this:
+#
+#   %p% \usetikzlibrary{arrows,automata,positioning}
+#   \begin{tikzpicture}[shorten >=1pt,node distance=2cm,auto]
+#     \node[state,initial]    (q_0)                {$q_0$};
+#     \node[state,accepting]  (q_1) [right of=q_0] {$q_1$};
+#     \path[->] (q_0) edge [bend left]  node {$a$} (q_1)
+#               (q_1) edge [bend left]  node {$b$} (q_0);
+#   \end{tikzpicture}
+#
+# If standalone is not part of your LaTeX installation, install it using your distribution's tools.
+# If that is not an option, get it on CTAN (http://ctan.org/pkg/standalone) and install manually.
+# If you can not install it into LaTeX folders, install it somewhere accessible and set up variable
+# `standalonepath` below accordingly; uncomment line 82, too.
+
+# Some parameters
+tmp="/tmp"; # Directory where intermediate files are put. Not all may be cleaned up.
+#standalonepath="/path/to/standalone"; # Path to a directory
+latex_preamble=""; # Code you want to be always included in the LaTeX preamble
+tikz_border="2bp"; # standalone class
+tikz_scale="0.1"; # tikzset style
+
+if [ ${#} == 0 ];
+then
+  echo "Please provide a file name as parameter.";
+fi
+
+for f in ${*};
+do
+  echo -n "Processing ${f} ...";
+
+  preamble="${latex_preamble} `cat ${f} | grep "^%p%" | sed 's/^...//'`";
+
+  echo "\documentclass[border=${tikz_border}]{standalone}\usepackage{tikz}${preamble}\begin{document}" > ${tmp}/${f%.tikz}.tex;
+  echo "\begingroup\tikzset{every picture/.style={scale=${tikz_scale}}}%" >> ${tmp}/${f%.tikz}.tex;
+  cat ${f} | grep -v "^%p%" >> ${tmp}/${f%.tikz}.tex;
+  echo "\endgroup\end{document}" >> ${tmp}/${f%.tikz}.tex;
+
+  # Uncomment if standalone is not available. Make sure to configure the path above.
+  # cp ${standalonepath}/* ${tmp}/;
+
+  if [ ! -e ${tmp}/${f%.tikz}_tmp ]
+  then
+    mkdir ${tmp}/${f%.tikz}_tmp;
+  fi
+
+  dir=`pwd`;
+  cd ${tmp};
+  pdflatex --shell-escape -file-line-error -interaction=nonstopmode -output-directory=${f%.tikz}_tmp ${f%.tikz}.tex > tikz2svg_${f%.tikz}_log;
+  cd "${dir}";
+
+  if [ -e ${tmp}/${f%.tikz}_tmp/${f%.tikz}.pdf ];
+  then
+    inkscape -l ${tmp}/${f%.tikz}.svg ${tmp}/${f%.tikz}_tmp/${f%.tikz}.pdf;
+    mv ${tmp}/${f%.tikz}.svg ./
+    echo " Done.";
+  else
+    echo " Error. See ${tmp}/tikz2svg_${f%.tikz}_log";
+  fi
+
+
+  rm ${tmp}/${f%.tikz}.tex &> /dev/null;
+  rm -rf ${tmp}/${f%.tikz}_tmp &> /dev/null;
+done;
+

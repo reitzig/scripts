@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Copyright 2013, Raphael Reitzig
+# <code@verrech.net>
+#
+# pullphotos is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# pullphotos is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pullphotos. If not, see <http://www.gnu.org/licenses/>.
+
+# Pulls photos from a connected camera and rotates them as appropriate.
+# Remember to delete them on your camera afterwards!
+# Requires `gphoto2` and `jhead`.
+
+echo -n "[pullphotos] Detecting camera ...";
+gphoto2 --auto-detect > /dev/null;
+sleep 1s;
+echo " Done";
+
+echo -n "[pullphotos] Pulling photos ...";
+gphoto2 -P &> /dev/null;
+sleep 1s;
+echo " Done";
+
+echo -n "[pullphotos] Rotating photos ...";
+jhead -autorot * &> /dev/null;
+echo " Done";

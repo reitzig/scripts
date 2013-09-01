@@ -1,0 +1,149 @@
+#!/bin/bash
+
+# Copyright 2013, Raphael Reitzig
+# <code@verrech.net>
+#
+# watch is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# watch is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with watch. If not, see <http://www.gnu.org/licenses/>.
+
+# Wraps `omxplayer` to avoid a couple of usability issues, e.g.
+#  * hides shell background during video playback,
+#  * supports playlists and
+#  * supports (recursive) playback of multiple files and directories.
+#
+# Designed to run on RaspberryPi using HDMI output and audio passthrough.
+# Adapt lines 84, 88, 117 if that does not work for you.
+#
+# Requires:
+# * libfile-mimeinfo-perl (i.e. mimetype)
+# * util-linux (i.e. setterm)
+# * omxplayer
+
+# Temporary file used to store watched files
+played="/tmp/watch_played";
+
+if [ ${#} = 0 ];
+then
+  # Tell user with obscure reference that
+  # they should provide some input.
+  echo "File, you fool!";
+  exit;
+fi;
+
+# Hide cursor (omxplayer bug workaround)
+setterm -cursor off;
+
+# Change delimiter for file reads (handles filename with spaces)
+set -f;
+IFS='
+';
+
+# Collect played filenames for deletion prompt
+echo "" > "${played}";
+remember () {
+  echo -e "${1}" >> "${played}";
+}
+
+# Uses file and mimetype to determin whether the given
+# filename belongs to a video, audio, text, directory or other file.
+# Written to be as fast as possible on legal files.
+filetype () {
+  if [ -d "${1}" ];
+  then
+    echo "dir";
+  else
+    local legal=("video" "audio" "text");
+    local quick=`file -bi "${1}" | sed -e "s/\/.*$//"`;
+    case "${legal[@]}" in
+      *"${quick}"*)   echo "${quick}" ;;
+      *)              echo `mimetype -b "${1}" | sed -e "s/\/.*$//"`; # Only do this slow call if file fails
+    esac
+  fi
+}
+
+# Plays a single file. Distinguishes between video,
+# audio, directories and playlists. Prompts before trying to play
+# files with mimetypes other than audio and video.
+play () {
+  for f in "${@}"
+  do
+    local type=$(filetype "${f}");
+    if [ "${type}" = "video" ];
+    then
+      clear;
+      omxplayer -o hdmi -p "${f}" | echo ""; # clear and echo are omxplayer bug workaround
+      remember "${f}";
+    elif [ "${type}" = "audio" ];
+    then
+      omxplayer -o hdmi -p "${f}" | echo "Playing: $(basename ${f})";
+      remember "${f}";
+    elif [ "${type}" = "text" ];
+    then
+      echo "${f} is a text file.";
+      read -n 1 -p "  Use as playlist? [y/n] " answer;
+      if [ ${answer} = "y" ];
+      then
+        echo "";
+        play $(cat "${f}");
+      else
+        echo "";
+      fi;
+    elif [ "${type}" = "dir" ];
+    then
+      echo "${f} is a directory.";
+      read -n 1 -p "  Play all contained files? [y/n] " answer;
+      if [ ${answer} = "y" ];
+      then
+        echo "";
+        play $(find "${f}" -mindepth 1 -maxdepth 1 | sort);
+      else
+        echo "";
+      fi;
+    else
+      echo "${f} does not seem to be a compatible file.";
+      read -n 1 -p "  Try to play anyway? [y/n] " answer;
+      if [ ${answer} = "y" ];
+      then
+        omxplayer -o hdmi -p "${f}" | echo "";
+        remember "${f}";
+      else
+        echo "";
+      fi;
+    fi;
+  done;
+}
+
+# Start playback of passed files
+play "${@}";
+
+# Reactivate cursor
+setterm -cursor on;
+
+# Ask user whether to delete each played file
+for f in $(cat "${played}");
+do
+  if [ -f "${f}" ];
+  then
+    read -n 1 -p "Delete file ${f}? [y/n] " answer;
+    if [ ${answer} = "y" ];
+    then
+      echo -e "\n  As you wish, deleting ${f}.";
+      rm "${f}";
+    else
+      echo "";
+    fi;
+  fi;
+done;
+
+# Girlfriend-approved greeting
+echo -e "\nThanks for watching, now go and pet your cat, meow!";

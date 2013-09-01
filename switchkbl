@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# Copyright 2013, Raphael Reitzig
+# <code@verrech.net>
+#
+# switchkbl is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# switchkbl is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with switchkbl. If not, see <http://www.gnu.org/licenses/>.
+
+# This scripts allows to cycle through several
+# keyboard layouts and provides visual feedback
+# of success or failure. It is intended to be
+# bound to a keyboard shortcut. If you want to
+# change layouts by shell, you probably also
+# want to change the method of feedback.
+
+# Needs: setxkbmap, awk, libnotify-bin
+
+# This is the list of available layouts. Note
+# that entries have to come in triples.
+# The first component of each triplet has to be a
+# layout code that is understood by 'setxkbmap'.
+# The second component has to be the layout's name
+# as 'setxkbmap -print' prints it.
+# The third component is a string printed in
+# the notify box denoting the layout in human
+# readable form.
+# The fourth is the path to an image file that is
+# also shown in the notify box. Leave it empty to
+# have no image shown, but do not leave the element out!
+# Note that tilde (~) expansion does not work.
+# The first layout described will be considered
+# default.
+layouts=(
+  "us altgr-intl" "us(altgr-intl)"  "USA"     "/home/raphael/.icons/flags/us.png"
+  "se"            "se"              "Swedish" "/home/raphael/.icons/flags/se.png"
+  "de"            "de"              "German"  "/home/raphael/.icons/flags/de.png"
+);
+
+# For error messages, another icon will be used
+errimg="/home/raphael/.icons/error.png";
+
+# Retrieve current keyboard layout. Returns
+# something like 'de' or 'us'
+current=`
+  setxkbmap -print |
+  grep xkb_symbols |
+  awk '{print $4}' |
+  awk -F"+" '{print $2}'`;
+
+# If the current layout is not in the list,
+# set the first one
+next=0;
+
+# Find the layout that comes after $current
+for (( i = 0 ; i < (${#layouts[@]}/4) ; i++ )) do
+  if [ $current = ${layouts[$i*4 + 1]} ]; then
+    next=($i+1)%${#layouts[@]/4};
+  fi
+done
+
+# Set the keyboard layout
+return=`setxkbmap ${layouts[4*$next]} 2>&1`;
+
+if [ ! "${1}" = "-s" ]; then
+  if [ ${#return} -gt 0 ]; then
+    # Notify user of error
+    notify-send -i ${errimg}\
+                     "Failed Setting Layout ${layouts[3*$next]}"\
+                     "$return";
+  # echo "Failed setting layout ${layouts[4*$next]}";
+  else
+    # Notify user of successful layout change
+    notify-send -i ${layouts[4*$next + 3]}\
+                     "Switched Keyboard Layout"\
+                     "${layouts[4*$next + 2]}";
+  # echo "Switched to keyboard layout ${layouts[4*$next]}"
+  fi
+fi
+
+# Reconfigure customizations that might be set up
+xmodmap "/home/raphael/.Xmodmap"
+numlockx on
