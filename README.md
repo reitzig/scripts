@@ -3,35 +3,35 @@ Assorted Shellscripts
 
 This a just a collection of arguably useful shell scripts.
 
-## [`pavol.rb`](https://github.com/akerbos/scripts/blob/master/pavol.rb)
+### [`pavol.rb`](https://github.com/akerbos/scripts/blob/master/pavol.rb)
 
 Controls pulseaudio volume via shell. Since pulseaudio has a crappy CLI interface, this is useful
 if you want to assign media hotkeys their proper function under less flashy window managers such as Fluxbox.
 
-## [`pdfsplitk`](https://github.com/akerbos/scripts/blob/master/pdfsplitk)
+### [`pdfsplitk`](https://github.com/akerbos/scripts/blob/master/pdfsplitk)
 
 Splits PDFs into constant-sized chunks. Useful if you create bulk letters, numbered exams or similar and need one
 file per instance, e.g. for stapling printers.
 
-## [`pullphotos`](https://github.com/akerbos/scripts/blob/master/pullphotos)
+### [`pullphotos`](https://github.com/akerbos/scripts/blob/master/pullphotos)
 
 Downloads photos from [compatible](http://www.gphoto.org/doc/manual/FAQ.html#FAQ-camera-support) cameras without
 resorting to mounting them as mass-storage devices. Also rotates them according to information provided by the camera.
 
-## [`switchkbl`](https://github.com/akerbos/scripts/blob/master/switchkbl)
+### [`switchkbl`](https://github.com/akerbos/scripts/blob/master/switchkbl)
 
 Rotates through a set of hard-coded  (but easily changed) keyboard layouts. Useful for tying to a shortcut (or direct use)
 under window managers that do not have convenient support for multiple layouts.
 
-## [`tikz2png`](https://github.com/akerbos/scripts/blob/master/tikz2png)
+### [`tikz2png`](https://github.com/akerbos/scripts/blob/master/tikz2png)
 
 Converts TikZ images specified in their own file to PNG. Check the script for quality settings.
 
-## [`tikz2svg`](https://github.com/akerbos/scripts/blob/master/tikz2svg)
+### [`tikz2svg`](https://github.com/akerbos/scripts/blob/master/tikz2svg)
 
 Converts TikZ images specified in their own file to SVG.
 
-## [`watch`](https://github.com/akerbos/scripts/blob/master/watch)
+### [`watch`](https://github.com/akerbos/scripts/blob/master/watch)
 
 Wraps `omxplayer` to avoid a couple of usability issues, e.g.
 
