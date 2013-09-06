@@ -8,6 +8,11 @@ This a just a collection of arguably useful shell scripts.
 Controls pulseaudio volume via shell. Since pulseaudio has a crappy CLI interface, this is useful
 if you want to assign media hotkeys their proper function under less flashy window managers such as Fluxbox.
 
+### [`pdfinvert`](https://github.com/akerbos/scripts/blob/master/pdfinvert)
+
+In its basic mode, this script inverts all colors in a PDF, including embedded images.
+You can also specify a more carefully chosen set of color replacement rules.
+
 ### [`pdfsplitk`](https://github.com/akerbos/scripts/blob/master/pdfsplitk)
 
 Splits PDFs into constant-sized chunks. Useful if you create bulk letters, numbered exams or similar and need one

@@ -1,0 +1,201 @@
+#!/bin/bash
+
+# Copyright 2013, Raphael Reitzig
+# <code@verrech.net>
+#
+# pdfinvert is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# pdfinvert is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pdfinvert. If not, see <http://www.gnu.org/licenses/>.
+
+# Inverts colors in a PDF, including embedded images. Can use replacement 
+# tables instead of inverting all colors. Can add page numbers (`-pn`).
+#
+# Color files have one rule per line. Each line has the format
+#
+#   dd #xxxxxx #xxxxxx
+#
+# where
+#
+#  * dd is an integer used for fuzzy color matching in embedded binary
+#       images (see imagemagick documentation). Higher numbers mean colors
+#       "farther away" from the specified source color are replaced.
+#  * xxxxxx is an RGC color in hex. The first color is the source color, the
+#           second the replacement color.
+#
+#  So, for instance, the line
+#
+#   30 #ffffff #000000
+#
+#  will replace white with black, and in embedded images also colors "30-close"
+#  to white.
+#  Note that rules are applied in sequence, from top to bottom.
+#
+# Requirements:
+#  * inkscape
+#  * imagemagick
+#  * pdftk
+#  * perl
+#  * gs
+
+# # # # # # # # # # # # # # # 
+# Init
+# # # # # # # # # # # # # # # 
+
+if [ ${#} -eq 0 ];
+then
+  echo "Usage: pdfinvert [-pn] [-c <color file>] <input file> [output file]";
+  exit;
+fi
+
+pagenumbers=0;
+colors="";
+input="";
+
+# Read in command line parameters
+for (( p=1; p <= ${#}; p=p+1 ));
+do
+  if [ "${!p}" = "-pn" ];
+  then
+    pagenumbers=1;
+  elif [ "${!p}" = "-c" ];
+  then
+    ci=$((p+1));
+    colors="${!ci}";
+    p=${ci};
+  elif [ "${input}" = "" ];
+  then
+    input="${!p}";
+    filename="${input%.pdf}";
+    output="${filename}_inverted.pdf";
+  else
+    output="${!p}";
+  fi
+done;
+
+# Verify that input file exists
+if [[ ! -e "${input}" ]];
+then
+  echo "File '${input}' does not exist.";
+  exit;
+fi;
+
+tmp="/tmp/pdfinvert_${filename}";
+dir=`pwd`;
+
+# Ensure that temporary directory exists and is empty
+if [[ ! -d "${tmp}" ]]; 
+then 
+  mkdir "${tmp}";
+else
+  rm ${tmp}/* 2> /dev/null;
+fi
+
+# Build replacement commands
+if [[ ${colors} == "" ]];
+then
+  svgreplacer='s/#([0-9a-fA-F]{6})/sprintf("#%06x",0xFFFFFF - eval("0x${1}"))/ge';
+  pngreplacer() {
+    echo "s/\"data:image\/png;base64,(.*)\"/sprintf('\"data:image\/png;base64,'.qx{echo \"\${1}\" | base64 -d > ${1%.pdf}.png; convert ${1%.pdf}.png -negate ${1%.pdf}.png; base64 ${1%.pdf}.png; rm ${1%.pdf}.png;}.'\"')/e";
+  }
+else
+  svgreplacer="`cat ${colors} | sed 's%[0-9]\+\s\+\(#[0-9a-fA-F]\{6\}\)\s\+\(#[0-9a-fA-F]\{6\}\)%s/\1/\2/g;%' | tr -d "\n\r"`";
+  pngreplacerConvert="`cat ${colors} | sed "s/\([0-9]\+\)\s\+\(#[0-9a-fA-F]\{6\}\)\s\+\(#[0-9a-fA-F]\{6\}\)/-fuzz \1% -fill \\\"\3\\\" -opaque \\\"\2\\\" /" | tr -d "\n\r"`"
+  pngreplacer() {
+    echo "s/\"data:image\/png;base64,(.*)\"/sprintf('\"data:image\/png;base64,'.qx{echo \"\${1}\" | base64 -d > ${1%.pdf}.png; convert ${1%.pdf}.png  ${pngreplacerConvert}  ${1%.pdf}.png; base64 ${1%.pdf}.png; rm ${1%.pdf}.png;}.'\"')/e";
+  } 
+fi;
+
+# Command that returns page number inset for SVG
+pagenumber() {
+  echo "<g id=\"pagenumberg\"><text xml:space=\"preserve\" style=\"font-size:25px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#888888;fill-opacity:1;stroke:none;font-family:Sans;\" x=\"${2}\" y=\"${3}\" id=\"pagenumbert\" ><tspan  id=\"pagenumberts\" x=\"${2}\" y=\"${3}\" style=\"font-weight:1;font-style:normal;font-stretch:normal;font-variant:normal;font-size:25px;font-family:Sans;\">${1}<\/tspan><\/text><\/g>";
+}
+
+# # # # # # # # # # # # # # # 
+# Actual Work
+# # # # # # # # # # # # # # # 
+
+cp $input ${tmp}/;
+cd ${tmp};
+pdftk $input burst output ${tmp}/input_%04d.pdf;
+rm $input;
+
+invert() {
+  echo -e "Inverting ${1}...";
+
+  inkscape -l ${1%.pdf}.svg ${1};
+  rm ${1};
+
+  # Change size form US Letter to A4 (may want to generalise?):
+  #sed -e 's/width="765"/width="210mm"/;s/height="990"/height="297mm"/' ${1%.pdf}.svg \
+  #  > ${1%.pdf}a4.svg;
+  #mv ${1%.pdf}a4.svg ${1%.pdf}.svg;
+  # This does not rescale/fit!
+
+  # Replace colors of SVG elements as specified
+  perl -pe "${svgreplacer}" ${1%.pdf}.svg > ${1%.pdf}_inv.svg;
+  
+  # Replace colors in base64 encoded images
+  cmd="`pngreplacer ${1}`";
+  perl -pe "${cmd}" ${1%.pdf}_inv.svg > ${1%.pdf}.svg;
+  
+  if [[ ${pagenumbers} -gt 0 ]];
+  then  
+    # Add page numbers
+    page=`echo ${1} | sed -e "s/[^1-9]//g"`;
+    height=`grep -m 1 "height" ${1%.pdf}.svg | sed -e "s/[^0-9.]//g"`;
+    width=`grep -m 1 "width" ${1%.pdf}.svg | sed -e "s/[^0-9.]//g"`;
+    newheight=$((height + 30));
+    posx=$((width / 2));
+    posy=$((newheight));
+    perl -pe "s/height=\"${height}\"/height=\"${newheight}\"/" ${1%.pdf}.svg > ${1%.pdf}_inv.svg;
+    perl -pe "s/<\/svg>/`pagenumber ${page} ${posx} ${posy}`<\/svg>/" ${1%.pdf}_inv.svg > ${1%.pdf}.svg;
+    rm ${1%.pdf}_inv.svg;
+  fi;
+
+  inkscape -A ${1} ${1%.pdf}.svg;
+  rm ${1%.pdf}.svg;
+  
+  # Change PDF size to A4. Nasty workaround.
+  gs -sOutputFile=${1}a4.pdf -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sPAPERSIZE=a4 \
+     -dFIXEDMEDIA -dPDFFitPage -q -f ${1};
+  mv ${1}a4.pdf ${1};
+  
+  echo -e "Done inverting ${1}.\n";
+}
+
+# Invert all pages (in parallel)
+for f in input_*;
+do
+  invert ${f} &> ${f}_log &
+done;
+
+# Wait for all inversion jobs to finish
+for job in `jobs -p`;
+do
+  wait ${job};
+done
+
+# Collect outputs for debugging purposes
+cat *_log > log;
+rm *_log;
+
+# Join pages together again
+pdftk input_*.pdf cat output output.pdf allow AllFeatures; 
+
+# # # # # # # # # # # # # # # 
+# Cleanup
+# # # # # # # # # # # # # # # 
+
+rm input_*.pdf;
+
+cd ${dir};
+mv ${tmp}/output.pdf ${output};

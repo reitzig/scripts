@@ -27,7 +27,7 @@
 
 if [ ${#} -ne 4 ];
 then
-  echo "Usage: pdftsplitk <file.pdf> <pages per chunk> <target dir> [ps]";
+  echo "Usage: pdfsplitk <file.pdf> <pages per chunk> <target dir> [ps]";
   exit;
 fi
 
