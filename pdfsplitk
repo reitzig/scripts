@@ -17,7 +17,7 @@
 # along with pdfsplitk. If not, see <http://www.gnu.org/licenses/>.
 
 # Splits PDFs into constant-sized chunks.
-# Requires `pdftk`, `pdfinfo`, `awk` and `acrored` if PS output is desired.
+# Requires `pdftk`, `pdfinfo`, `awk` and `acroread` if PS output is desired.
 #
 # Call with four parameters:
 #  * First is the input file (`*.pdf`).
