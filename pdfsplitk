@@ -25,7 +25,7 @@
 #  * Third is the target directory.
 #  * Fourth is `ps` if you want PS instead of PDF output (optional).
 
-if [ ${#} -ne 4 ];
+if [ ${#} -lt 3 ];
 then
   echo "Usage: pdfsplitk <file.pdf> <pages per chunk> <target dir> [ps]";
   exit;
