@@ -74,7 +74,7 @@ do
   elif [ "${input}" = "" ];
   then
     input="${!p}";
-    filename="${input%.pdf}";
+    filename=`basename "${input%.pdf}"`;
     output="${filename}_inverted.pdf";
   else
     output="${!p}";
@@ -125,6 +125,8 @@ pagenumber() {
 
 cp $input ${tmp}/;
 cd ${tmp};
+input=`basename "${input}"`;
+
 pdftk $input burst output ${tmp}/input_%04d.pdf;
 rm $input;
 
