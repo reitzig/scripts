@@ -13,6 +13,13 @@ if you want to assign media hotkeys their proper function under less flashy wind
 In its basic mode, this script inverts all colors in a PDF, including embedded images.
 You can also specify a more carefully chosen set of color replacement rules.
 
+**Note:** Deprecated in favor of `pdfinvert.rb` as of af81254a4d31690a5dd13355109d3934aa17bac7
+
+### [`pdfinvert.rb`](https://github.com/akerbos/scripts/blob/master/pdfinvert.rb)
+
+In its basic mode, this script inverts all colors in a PDF, including embedded images.
+You can also specify a more carefully chosen set of color replacement rules and exclude images from the conversion.
+
 ### [`pdfsplitk`](https://github.com/akerbos/scripts/blob/master/pdfsplitk)
 
 Splits PDFs into constant-sized chunks. Useful if you create bulk letters, numbered exams or similar and need one
