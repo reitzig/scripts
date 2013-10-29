@@ -250,7 +250,8 @@ def invert(file)
       # Remove border
       if ( $trimcolor != "" )
         p = IO::popen("convert #{imgname}.#{imgtype} -bordercolor \"##{$trimcolor}\" " +
-                              "-border 1 -fill none -draw 'color 0,0 floodfill' #{imgname}.#{imgtype} 2>&1")
+                              "-border 1 -fill none -draw 'color 0,0 floodfill' -shave 1x1 +repage " +
+                              "#{imgname}.#{imgtype} 2>&1")
         log += p.readlines.join
       end
         
