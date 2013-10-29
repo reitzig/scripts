@@ -51,8 +51,15 @@
 #   
 #   1 1 0
 #
-# Means that images two and three on page one as well as image three on page three
+# means that images two and three on page one as well as image three on page three
 # remain unchanged; all other images will be converted.
+#
+# Additionally, you can specify a color using the `-it` option that will be trimmed
+# from the border of images (before converting). For example,
+#
+#   -it "#000000"
+#
+# will cause black borders to be trimmed.
 #
 # Requirements:
 #  * ruby
@@ -70,12 +77,13 @@ $DEBUG = false
 # # # # # # # # # # # # # # # 
 
 if ( ARGV.size == 0 )
-  puts "Usage: pdfinvert [-pn] [-c <color file>] [-i <image rule file>] <input file> [output file]"
+  puts "Usage: pdfinvert [-pn] [-c <color file>] [-i <image rule file>] [-it \"<color>\"] <input file> [output file]"
   Process.exit
 end
 
 $pagenumbers = false
 $colors = ""
+$trimcolor = ""
 $images = ""
 $input = ""
 
@@ -94,6 +102,9 @@ skip = 0
     skip = 1
   elsif ( ARGV[i] == "-i" )
     $images = ARGV[i+1]
+    skip = 1
+  elsif ( ARGV[i] == "-it" )
+    $trimcolor = ARGV[i+1]
     skip = 1
   elsif ( $input == "" )
     $input = ARGV[i]
@@ -227,43 +238,49 @@ def invert(file)
     # Replace colors in binary images as specified
     line.gsub!(/"data:image\/(\w+?);base64,(.*)"/) { |match|
       imgctr += 1
-      if ( convertimage?(pnr, imgctr) )
-        imgtype = $~[1]
-        File.open("#{basename}_#{imgctr}.b64", "w") { |f| f.write($~[2]) }
-        
-        # Convert base 64 string to image
-        p = IO::popen("base64 -d #{basename}_#{imgctr}.b64 > #{basename}_#{imgctr}.#{imgtype} 2>&1")
+      
+      imgtype = $~[1]
+      imgname = "#{basename}_#{imgctr}"
+      File.open("#{basename}_#{imgctr}.b64", "w") { |f| f.write($~[2]) }
+      
+      # Convert base 64 string to image
+      p = IO::popen("base64 -d #{imgname}.b64 > #{imgname}.#{imgtype} 2>&1")
+      log += p.readlines.join
+      
+      # Remove border
+      if ( $trimcolor != "" )
+        p = IO::popen("convert #{imgname}.#{imgtype} -bordercolor \"##{$trimcolor}\" " +
+                              "-border 1 -fill none -draw 'color 0,0 floodfill' #{imgname}.#{imgtype} 2>&1")
         log += p.readlines.join
+      end
         
-        # Invert/replace colors
+      # Invert/replace colors
+      if ( convertimage?(pnr, imgctr) )
         if ( $colors == "" )
-          p = IO::popen("convert #{basename}_#{imgctr}.#{imgtype} -negate #{basename}_#{imgctr}.#{imgtype} 2>&1")
+          p = IO::popen("convert #{imgname}.#{imgtype} -negate #{imgname}.#{imgtype} 2>&1")
           log += p.readlines.join
         else
           $colororder.each { |color|
             fuzz = $colorrules[color][0]
-            p = IO::popen("convert #{basename}_#{imgctr}.#{imgtype} -fuzz #{fuzz}% " + 
+            p = IO::popen("convert #{imgname}.#{imgtype} -fuzz #{fuzz}% " + 
                             "-fill \"##{replacecolor(color)}\" -opaque \"##{color}\" " + 
-                            "#{basename}_#{imgctr}.#{imgtype} 2>&1")
+                            "#{imgname}.#{imgtype} 2>&1")
             log += p.readlines.join
           }
         end
-        
-        # Convert back to base 64
-        p = IO::popen("base64 #{basename}_#{imgctr}.#{imgtype} > #{basename}_#{imgctr}.b64 2>&1")
-        log += p.readlines.join
-        
-        result = "\"data:image/#{imgtype};base64,#{File.open("#{basename}_#{imgctr}.b64", "r") { |f| result = f.readlines.join}}\""
-        
-        # Cleanup
-        FileUtils.rm("#{basename}_#{imgctr}.b64") if !$DEBUG
-        FileUtils.rm("#{basename}_#{imgctr}.#{imgtype}") if !$DEBUG
-        
-        result
-      else
-        # Leave old image in place
-        "\"data:image/#{$~[1]};base64,#{$~[2]}\""
       end
+        
+      # Convert back to base 64
+      p = IO::popen("base64 #{imgname}.#{imgtype} > #{imgname}.b64 2>&1")
+      log += p.readlines.join
+      
+      result = "\"data:image/#{imgtype};base64,#{File.open("#{imgname}.b64", "r") { |f| result = f.readlines.join}}\""
+      
+      # Cleanup
+      FileUtils.rm("#{imgname}.b64") if !$DEBUG
+      FileUtils.rm("#{imgname}.#{imgtype}") if !$DEBUG
+      
+      result
     }
   
     # Add page number (if requested)
@@ -292,15 +309,16 @@ def invert(file)
     f.write(svg.join)
   }
   
-  p = IO::popen("inkscape -A #{file} #{basename}_inv.svg 2>&1")
+  outbasename = sprintf("output_%04d", pnr)
+  p = IO::popen("inkscape -A #{outbasename}.pdf #{basename}_inv.svg 2>&1")
   log += p.readlines.join
   FileUtils.rm("#{basename}_inv.svg") if !$DEBUG
   
   # Change PDF size to A4. Nasty workaround.
-  p = IO::popen("gs -sOutputFile=#{basename}a4.pdf -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sPAPERSIZE=a4 " +
-                   "-dFIXEDMEDIA -dPDFFitPage -q -f #{file} 2>&1")
+  p = IO::popen("gs -sOutputFile=#{outbasename}a4.pdf -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sPAPERSIZE=a4 " +
+                   "-dFIXEDMEDIA -dPDFFitPage -q -f #{outbasename}.pdf 2>&1")
   log += p.readlines.join
-  FileUtils.mv("#{basename}a4.pdf", file)
+  FileUtils.mv("#{outbasename}a4.pdf", "#{outbasename}.pdf")
 
   log += "Done inverting #{file}.\n";
   return log
@@ -314,10 +332,12 @@ FileUtils.cp($input, $tmp)
 Dir.chdir($tmp)
 $input = File.basename($input)
 
-`pdftk #{$input} burst output #{$tmp}/input_%04d.pdf`
-FileUtils.rm($input) if !$DEBUG
-
 $log = ""
+
+p = IO::popen("pdftk #{$input} burst output #{$tmp}/input_%04d.pdf 2>&1")
+$log += p.readlines.join
+FileUtils.rm($input) if !$DEBUG
+FileUtils.rm("doc_data.txt") if !$DEBUG # Created by pdftk
 
 # Invert all pages
 begin
@@ -335,13 +355,15 @@ rescue Gem::LoadError
   }
 end
 
+# Join pages together again
+p = IO::popen("pdftk output*.pdf cat output output.pdf allow AllFeatures 2>&1")
+$log += p.readlines.join
+Dir["output_*"].each { |f| FileUtils.rm(f) }
+
 # Write log (for debugging)
 File.open("log", "w") { |f|
   f.write($log)
-}  if $DEBUG
-
-# Join pages together again
-`pdftk input_*.pdf cat output output.pdf allow AllFeatures` 
+} if $DEBUG
 
 # # # # # # # # # # # # # # # 
 # Wrap-up
@@ -349,3 +371,7 @@ File.open("log", "w") { |f|
 
 Dir.chdir($dir)
 FileUtils.cp("#{$tmp}/output.pdf", $output)
+FileUtils.rm("#{$tmp}/output.pdf") if !$DEBUG
+FileUtils.rmdir($tmp) if !$DEBUG
+
+puts "Done. Find debug information in #{$tmp}" if $DEBUG
