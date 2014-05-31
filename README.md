@@ -3,7 +3,7 @@ Assorted Shellscripts
 
 This a just a collection of arguably useful shell scripts.
 
-###[`imgs2pdf`](https://github.com/akerbos/scripts/blob/master/imgs2pdf.rb)
+###[`imgs2pdf`](https://github.com/akerbos/scripts/blob/master/imgs2pdf)
 
 Uses LaTeX to create a (portrait A4) PDF from the images passed as parameters.
 Shrinks images to fit the page.
