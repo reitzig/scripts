@@ -3,6 +3,11 @@ Assorted Shellscripts
 
 This a just a collection of arguably useful shell scripts.
 
+###[`imgs2pdf`](https://github.com/akerbos/scripts/blob/master/imgs2pdf)
+
+Uses LaTeX to create a (portrait A4) PDF from the images passed as parameters.
+Shrinks images to fit the page.
+
 ### [`pavol.rb`](https://github.com/akerbos/scripts/blob/master/pavol.rb)
 
 Controls pulseaudio volume via shell. Since pulseaudio has a crappy CLI interface, this is useful

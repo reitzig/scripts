@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Copyright 2014, Raphael Reitzig
+# <code@verrech.net>
+#
+# imgs2pdf is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# imgs2pdf is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with imgs2pdf. If not, see <http://www.gnu.org/licenses/>.
+
+# Creates a portrait A4 PDF from the images passed as parameters.
+# Shrinks images to fit the page.
+#
+# Requires `pdflatex` from a reasonably current LaTeX distribution,
+#   i.e. with packages `graphicx`, `geometry` and `adjustbox`.
+#
+# To Do: options for landscape/best-fit-rotation, multiple images per page.
+
+
+script=`basename $0`;
+target="`basename "$(pwd)"`";
+
+echo -n "[${script}] Creating LaTeX...";
+echo "\documentclass[a4paper]{article}\usepackage[utf8]{inputenc}\usepackage{graphicx,adjustbox}\usepackage[margin=1.5cm]{geometry}\pagestyle{empty}\begin{document}" > "${target}.tex";
+for f in ${*};
+do
+  echo "\mbox{}\vfill\begin{center}\begin{adjustbox}{max width=\linewidth}\includegraphics{${f}}\end{adjustbox}\end{center}\vfill\clearpage" >> "${target}.tex";
+done;
+echo "\end{document}" >> "${target}.tex"
+echo " Done";
+
+echo -n "[${script}] Compiling...";
+pdflatex --interaction=nonstopmode "${target}.tex" >> /dev/null;
+echo " Done"
+rm "${target}".{tex,log,aux};
