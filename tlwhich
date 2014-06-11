@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# Copyright 2014, Raphael Reitzig
+# <code@verrech.net>
+#
+# tlwhich is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# tlwhich is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with tlwhich. If not, see <http://www.gnu.org/licenses/>.
+
+# TeX Live Which looks for command and environment definitions in the packages
+# and document classes installed in the local TeX Live installation.
+# Pass a document or environment name (without leading slash); even
+# grep-compatibel regular expressions are possible.
+
+# Where to search?
+texhome="/usr/local/texlive/2013";
+
+# What environment definitions to look for?
+# - newenvironment
+# - renewenvironment
+# - Those from xparse
+# - Those from xargs
+# - NewEnviron (from environ)
+#
+# We *don't* look for pairs \def\env{...} ... \def\endenv{...} -- that's 
+# not really feasible without context-free (or TeX) parsing.
+envpattern="\\\\((re)?newenvironment|NewEnviron|(Declare|New|Renew|Provide)DocumentEnvironment)x?\*?{${1}}";
+
+# What command definitions to look for?
+# - def (and variants)
+# - newcommand
+# - newcommand*
+# - renewcommand
+# - renewcommand*
+# - providecommand
+# - providecommand*
+# - DeclareRobustCommand
+# - CheckCommand
+# - Those from xparse
+# - Those from xargs
+cmdpattern="\\\\((e|x|g)?def|(Declare|New|Renew|Provide|DeclareExpandable|Check)DocumentCommand|(DeclareRobust|Check)Command|((re)?new|provide)command)x?\*?({\\\\${1}}|\\\\${1}(\[|\{))";
+
+envres=`grep --include=*.{sty,cls} -l -r -E "${envpattern}" "${texhome}"`;
+cmdres=`grep --include=*.{sty,cls} -l -r -E "${cmdpattern}" "${texhome}"`;
+
+if [[ "${envres}" != "" ]];
+then
+  echo "Files that define environment ${1}:";
+  for f in ${envres};
+  do
+    echo `basename ${f}`;
+  done;
+fi
+
+if [[ "${cmdres}" != "" ]];
+then
+  if [[ "${envres}" != "" ]]; then echo ""; fi
+  echo "Files that define command ${1}:";
+  for f in ${cmdres};
+  do
+    echo `basename ${f}`;
+  done;
+fi

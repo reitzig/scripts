@@ -35,6 +35,12 @@ resorting to mounting them as mass-storage devices. Also rotates them according 
 Rotates through a set of hard-coded  (but easily changed) keyboard layouts. Useful for tying to a shortcut (or direct use)
 under window managers that do not have convenient support for multiple layouts.
 
+### [`tlwhich`](https://github.com/akerbos/scripts/blob/master/tlwhich)
+
+Ever wondered which package provided that one LaTeX command you remember?
+TeX Live Which looks for command and environment definitions in the packages
+and document classes installed in the local TeX Live installation.
+
 ### [`tikz2png`](https://github.com/akerbos/scripts/blob/master/tikz2png)
 
 Converts TikZ images specified in their own file to PNG. Check the script for quality settings.
