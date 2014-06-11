@@ -21,6 +21,8 @@
 # Pass a document or environment name (without leading slash); even
 # grep-compatibel regular expressions are possible.
 
+# TODO: sort result; switch to hide redefinitions; switch(es) to hide sty/cls; output matched command name?
+
 # Where to search?
 texhome="/usr/local/texlive/2013";
 
