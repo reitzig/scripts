@@ -8,10 +8,10 @@ This a just a collection of arguably useful shell scripts.
 Uses LaTeX to create a (portrait A4) PDF from the images passed as parameters.
 Shrinks images to fit the page.
 
-###[`mkimgpage.rb`]()
+###[`mkimgpage.rb`](https://github.com/akerbos/scripts/blob/master/mkimgpage.rb)
 
 Takes a Markdown file with special image tags and creates an image gallery from it.
-Comes with a [style]() and [footer]() you might want to adapt.
+Comes with a [style](https://github.com/akerbos/scripts/blob/master/mkimgpage.css) and [footer](https://github.com/akerbos/scripts/blob/master/mkimgpage_footer.html) you might want to adapt.
 
 ### [`pavol.rb`](https://github.com/akerbos/scripts/blob/master/pavol.rb)
 
