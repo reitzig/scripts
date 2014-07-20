@@ -30,13 +30,27 @@ div.footer {
   font-size : 8pt;
   color : #1A1A4A;
   opacity : 0.7;
-  margin-top : 1cm;
   width : 50%;
   margin : 1cm auto 0 auto;
 }
 
 p.license {
   text-align : center;
+}
+
+div.created_with {
+  font-size : 8pt;
+  color : #1A1A4A;
+  opacity : 0.5;
+  margin-top : 1cm;
+  width : 50%;
+  margin : 1cm auto 0 auto;
+  text-align : center;
+}
+
+div.created_with a {
+  color : #1A1A4A;
+  text-decoration : none;
 }
 
 </style>
