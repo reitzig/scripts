@@ -1,0 +1,42 @@
+<style type="text/css">
+
+/* Supress title from pandoc */
+h1.title, h2.author, h3.date {
+  display : none;
+}
+
+body {
+  font-family : Sans-Serif;
+  color : #2A2A5A;
+  width : 900px;
+  margin : 20px auto 20px auto;
+  border : 1px #CCCCFF outset;
+  border-radius : 4px;
+  padding : 15px;
+  background-color : #CCCCCC;
+}
+
+a.imglink img {
+  border : 1px #2A2A5A solid;
+  border-radius : 2px;
+  padding : 2px;
+}
+
+a.imglink img:hover {
+  opacity : 0.5;
+}
+
+div.footer {
+  font-size : 8pt;
+  color : #1A1A4A;
+  opacity : 0.7;
+  margin-top : 1cm;
+  width : 50%;
+  margin : 1cm auto 0 auto;
+}
+
+p.license {
+  text-align : center;
+}
+
+</style>

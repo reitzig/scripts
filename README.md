@@ -8,6 +8,11 @@ This a just a collection of arguably useful shell scripts.
 Uses LaTeX to create a (portrait A4) PDF from the images passed as parameters.
 Shrinks images to fit the page.
 
+###[`mkimgpage.rb`]()
+
+Takes a Markdown file with special image tags and creates an image gallery from it.
+Comes with a [style]() and [footer]() you might want to adapt.
+
 ### [`pavol.rb`](https://github.com/akerbos/scripts/blob/master/pavol.rb)
 
 Controls pulseaudio volume via shell. Since pulseaudio has a crappy CLI interface, this is useful
