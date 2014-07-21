@@ -16,6 +16,25 @@ body {
   background-color : #CCCCCC;
 }
 
+a {
+  color : #2A2A5A;
+}
+
+a:hover {
+  text-decoration : none;
+}
+
+div.banner {
+  text-align : center;
+  margin : 0;
+  padding : 0;
+  width : 100%;
+}
+
+div.banner img {
+  border : 1px #CCCCFF solid;
+}
+
 a.imglink img {
   border : 1px #2A2A5A solid;
   border-radius : 2px;

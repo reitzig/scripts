@@ -18,7 +18,6 @@
 
 # Creates image galleries from Markdown plus special image tags.
 # TODO describe
-# TODO README
  
 # Requires ImageMagick, pandoc
 # Requires gem 'zip' for zipping
@@ -29,6 +28,7 @@ require 'pathname'
 # Defaults
 thumbsize = 100
 fullsize  = 2000
+bannerwidth = 890 # Chosen to fit body width and padding. Height is thumbsize/2.
 package   = '"#{input.sub(/\.\w+$/,"")}"'
 
 if ARGV.size == 0
@@ -50,19 +50,25 @@ footer = "#{File.dirname(Pathname.new(__FILE__).realpath)}/#{File.basename(__FIL
 # Parse all image references
 print "Scanning input file ... "
 images = []
+banners = []
 text = nil
 File.open(input,"r") { |f|
   text = f.read
-  text.gsub!(/!!\[([^\[\]]*)\]\(([^\(\)]+)\)/) { |match|
+  text.gsub!(/!(!|banner)\[([^\[\]]*)\]\(([^\(\)]+)\)/) { |match|
     # TODO add thumbnail weight?
-    desc = match[$1]
-    file = match[$2]
+    desc = match[$2]
+    file = match[$3]
 
     type  = File.extname(file)
     name  = File.basename(file, type)
-        
-    images.push({:file => file, :name => name,:type => type})
-    "  <a class=\"imglink\" href=\"#{name}#{type}\"><img src=\"#{name}_thumb#{type}\" title=\"#{desc}\" alt=\"#{desc}\"/></a>"
+    
+    if ( match[$1] == "!" )
+      images.push({:file => file, :name => name,:type => type})
+      "  <a class=\"imglink\" href=\"#{name}#{type}\"><img src=\"#{name}_thumb#{type}\" title=\"#{desc}\" alt=\"#{desc}\"/></a>"
+    else ( match[$1] == "banner" )
+      banners.push({:file => file, :name => name,:type => type})
+      "  <div class=\"banner\"><img src=\"#{name}_banner#{type}\" title=\"#{desc}\" alt=\"#{desc}\"/></div>"
+    end
   }
 }
 puts "Done"
@@ -107,11 +113,16 @@ end
 # Copy images, create thumbnails
 progress_prefix = "Converting images ... "
 j = 0
+total = 2*images.size + banners.size
+
+# Convert normal images
 images.each { |i| # TODO make parallel
-  print "\r#{progress_prefix}[#{j}/#{images.size}]"; STDOUT.flush
+  print "\r#{progress_prefix}[#{j}/#{total}]"; STDOUT.flush
   if File.exist?("#{i[:file]}")
     if !File.exist?("#{tmpdir}/#{i[:name]}#{i[:type]}")
-      IO::popen("convert \"#{i[:file]}\" -resize \"#{fullsize}x#{fullsize}>\" \"#{tmpdir}/#{i[:name]}#{i[:type]}\"") { |p|
+      # Shrink image so that the longer side is <= fullsize
+      IO::popen("convert \"#{i[:file]}\" -resize \"#{fullsize}x#{fullsize}>\"" +
+                " \"#{tmpdir}/#{i[:name]}#{i[:type]}\"") { |p|
         out = p.readlines.join("\n").strip
         if ( out != nil && out.length > 0 )
           errors.push(out)
@@ -119,7 +130,31 @@ images.each { |i| # TODO make parallel
       }
     end
     if !File.exist?("#{tmpdir}/#{i[:name]}_thumb#{i[:type]}")
-      IO::popen("convert \"#{i[:file]}\" -resize \"#{thumbsize}x#{thumbsize}^\" -gravity center -extent \"#{thumbsize}x#{thumbsize}\" \"#{tmpdir}/#{i[:name]}_thumb#{i[:type]}\"") { |p|
+      # Shrink image so that the longer side is <= thumbsize and crop the other dimension down
+      IO::popen("convert \"#{i[:file]}\" -resize \"#{thumbsize}x#{thumbsize}^\"" +
+                " -gravity center -extent \"#{thumbsize}x#{thumbsize}\"" +
+                " \"#{tmpdir}/#{i[:name]}_thumb#{i[:type]}\"") { |p|
+        out = p.readlines.join("\n").strip
+        if ( out != nil && out.length > 0 )
+          errors.push(out)
+        end
+      }
+    end
+  else
+    puts "\n  Image '#{i[:file]}' is not there."
+  end
+  j += 2
+}
+
+# Convert banners (which need no thumbnail)
+banners.each { |i| # TODO make parallel
+  print "\r#{progress_prefix}[#{j}/#{total}]"; STDOUT.flush
+  if File.exist?("#{i[:file]}")
+    if !File.exist?("#{tmpdir}/#{i[:name]}_banner#{i[:type]}")
+      # Shrink image so that width is <= bannersize and cut to height of thumbsize/2
+      IO::popen("convert \"#{i[:file]}\" -resize #{bannerwidth}" +
+                " -gravity center -extent \"#{bannerwidth}x#{thumbsize}\"" +
+                " \"#{tmpdir}/#{i[:name]}_banner#{i[:type]}\"") { |p|
         out = p.readlines.join("\n").strip
         if ( out != nil && out.length > 0 )
           errors.push(out)
@@ -131,6 +166,7 @@ images.each { |i| # TODO make parallel
   end
   j += 1
 }
+
 puts "\r#{progress_prefix}Done" + " "*10
 
 # Package the whole thing up
