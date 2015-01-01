@@ -13,6 +13,10 @@ Shrinks images to fit the page.
 Takes a Markdown file with special image tags and creates an image gallery from it.
 Comes with a [style](https://github.com/akerbos/scripts/blob/master/mkimgpage.css) and [footer](https://github.com/akerbos/scripts/blob/master/mkimgpage_footer.html) you might want to adapt.
 
+###[`music2thumb.rb`](https://github.com/akerbos/scripts/blob/master/music2thumb.rb)
+
+Copies music files to a thumbdrive/music player, converting down to the best format your player supports.
+
 ### [`pavol.rb`](https://github.com/akerbos/scripts/blob/master/pavol.rb)
 
 Controls pulseaudio volume via shell. Since pulseaudio has a crappy CLI interface, this is useful
