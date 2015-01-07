@@ -187,6 +187,7 @@ prefix = "Processing... "
 jobs.keys.each { |infile|
   print "\r#{prefix}[#{done}/#{jobs.size}]"; STDOUT.flush
   
+  # TODO catch IO exceptions (in particular, target may be out of space)
   if ( jobs[infile][:conv] == nil )
     FileUtils::mkdir_p(File.dirname(jobs[infile][:target]))
     FileUtils::cp(infile, jobs[infile][:target])
