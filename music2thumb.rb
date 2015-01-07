@@ -51,7 +51,7 @@
 # (depending on which conversions need to happen)
 # as well as gem 'ruby-progressbar'
 #
-# For parallel conversion, install gems 'parallel'.
+# For parallel conversion, install gems 'parallel' and 'system' (may require 'bundler').
 
 require 'fileutils'
 require 'ruby-progressbar'
@@ -205,11 +205,33 @@ jobs.select { |k,v| v[:conv] == nil }.each { |infile, spec|
 }
 
 # Convert to target folder
+processes = -1
 begin
+  gem "system"
+  require 'system'
   gem "parallel"
   require 'parallel'
+  
+  print "Looking for CPU count..."
+  cores = System::CPU.count  
+  print "\rHow many processes do you want us to use? [0-#{cores}] "
+  processes = [[$stdin.gets.strip.to_i, 1].max, cores].min
+  puts "\tOkay, using #{processes} processes."
 rescue Gem::LoadError
-  puts "  Hint: You can speed up"
+  puts "Hint: You can speed up conversion by installing gems 'parallel' and 'system'!"
+  
+  # Define skeleton class for graceful sequential fallback
+  module Parallel
+    class << self
+      def each(hash, options={}, &block)
+        hash.each { |k,v|
+          block.call(k, v)
+          options[:finish].call(nil, nil, nil)
+        }
+        array
+      end
+    end
+  end
 end
 
 progress = ProgressBar.create(:title => "Converting", 
@@ -217,19 +239,34 @@ progress = ProgressBar.create(:title => "Converting",
                               :format => "%t: [%B] [%c/%C] %E",
                               :progress_mark => "|",
                               :remainder_mark => ".")
-jobs.select { |k,v| v[:conv] != nil }.each { |infile,spec| 
-  # TODO catch IO exceptions (in particular, target may be out of space)
-  # Write to /tmp first in order to avoid many writes to thumbdrive
-  outfile = "/tmp/#{spec[:target].gsub("/", "")}"
 
-  `#{eval(conversions[spec[:conv]])} &> /dev/null`
-  if ( !File.exist?(outfile) )
-    puts "\tAn error occurred converting #{infile}."
-  else
-    FileUtils::mkdir_p(File.dirname(spec[:target]))
-    FileUtils::mv(outfile, spec[:target])
-  end
-  progress.increment
-}
-puts "\r#{prefix}Done.     "
-puts "Your music awaits you, have fun!"
+begin
+  Parallel.each(jobs.select { |k,v| v[:conv] != nil },
+                :in_processes => processes,
+                :finish  => lambda { |e,i,r| progress.increment }) { |infile,spec| 
+    begin
+      # Write to /tmp first in order to avoid many writes to thumbdrive
+      outfile = "/tmp/#{spec[:target].gsub("/", "")}"
+  
+      `#{eval(conversions[spec[:conv]])} &> /dev/null`    
+      if ( !File.exist?(outfile) )
+        progress.log("\tAn error occurred converting #{infile}.")
+      else
+        FileUtils::mkdir_p(File.dirname(spec[:target]))
+        FileUtils::mv(outfile, spec[:target])
+      end
+    rescue Interrupt
+      raise Interrupt if processes == -1 # Sequential fallback needs exception!
+      # Note that some avconv process may be left running. Let's hope they
+      # finish in a timely manner.
+    rescue => e
+      progress.log("\tAn error occurred: #{e.to_s}")
+      # TODO Should we break? Let's see what kinds of errors we get...
+    end
+  }
+
+  puts "Your music awaits you, have fun!"
+rescue Interrupt, Parallel::DeadWorker
+  progress.stop
+  puts "Cancelled"
+end
