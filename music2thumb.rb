@@ -48,15 +48,19 @@
 
  
 # Requires avconv with FLAC, Vorbis and MP3 support
-# (depending on which conversions need to happen).
+# (depending on which conversions need to happen)
+# as well as gem 'ruby-progressbar'
+#
+# For parallel conversion, install gems 'parallel'.
 
 require 'fileutils'
+require 'ruby-progressbar'
 
 all_formats = ["flac", "ogg", "mp3"] # Ordered decreasingly by quality/preference
 conversions = {
-  "ogg->mp3"  => '"avconv -v quiet -i \"#{infile}\" -qscale 6 -map_metadata 0:s:0 \"#{outfile}\""',
-  "flac->mp3" => '"avconv -v quiet -i \"#{infile}\" -qscale 6 -map_metadata 0:g:0 \"#{outfile}\""',
-  "flac->ogg" => '"avconv -v quiet -i \"#{infile}\" -codec libvorbis -qscale 3 -map_metadata 0 \"#{outfile}\""'
+  "ogg->mp3"  => '"avconv -v quiet -y -i \"#{infile}\" -qscale 6 -map_metadata 0:s:0 \"#{outfile}\""',
+  "flac->mp3" => '"avconv -v quiet -y -i \"#{infile}\" -qscale 6 -map_metadata 0:g:0 \"#{outfile}\""',
+  "flac->ogg" => '"avconv -v quiet -y -i \"#{infile}\" -codec libvorbis -qscale 3 -map_metadata 0 \"#{outfile}\""'
 }
 # We only convert to the best allowed format and (hopefully) never up,
 # so other directions are not necessary.
@@ -183,30 +187,49 @@ if ( $stdin.gets.strip != "Y" )
   Process.exit
 end
 
-# Copy/Convert to target folder
-# TODO parallelise, progess bar
-done = 0
-prefix = "Processing... "
-jobs.keys.each { |infile|
-  print "\r#{prefix}[#{done}/#{jobs.size}]"; STDOUT.flush
-  
+# Copy to target folder
+# Do this separately and first in order to get the quick stuff over with 
+# (more music on target should the user abort) and make time estimators
+# somewhat more robust. Also, parallelisation does not help for (I/O-bound)
+# copying.
+progress = ProgressBar.create(:title => "Copying   ", 
+                              :total => jobs.select { |k,v| v[:conv] == nil }.size,
+                              :format => "%t: [%B] [%c/%C] %E",
+                              :progress_mark => "|",
+                              :remainder_mark => ".")
+jobs.select { |k,v| v[:conv] == nil }.each { |infile, spec| 
+   # TODO catch IO exceptions (in particular, target may be out of space)
+  FileUtils::mkdir_p(File.dirname(spec[:target]))
+  FileUtils::cp(infile, spec[:target])
+  progress.increment
+}
+
+# Convert to target folder
+begin
+  gem "parallel"
+  require 'parallel'
+rescue Gem::LoadError
+  puts "  Hint: You can speed up"
+end
+
+progress = ProgressBar.create(:title => "Converting", 
+                              :total => jobs.select { |k,v| v[:conv] != nil }.size,
+                              :format => "%t: [%B] [%c/%C] %E",
+                              :progress_mark => "|",
+                              :remainder_mark => ".")
+jobs.select { |k,v| v[:conv] != nil }.each { |infile,spec| 
   # TODO catch IO exceptions (in particular, target may be out of space)
-  if ( jobs[infile][:conv] == nil )
-    FileUtils::mkdir_p(File.dirname(jobs[infile][:target]))
-    FileUtils::cp(infile, jobs[infile][:target])
+  # Write to /tmp first in order to avoid many writes to thumbdrive
+  outfile = "/tmp/#{spec[:target].gsub("/", "")}"
+
+  `#{eval(conversions[spec[:conv]])} &> /dev/null`
+  if ( !File.exist?(outfile) )
+    puts "\tAn error occurred converting #{infile}."
   else
-    # Write to /tmp first in order to avoid many writes to thumbdrive
-    outfile = "/tmp/#{jobs[infile][:target].gsub("/", "")}"
-  
-    `#{eval(conversions[jobs[infile][:conv]])} &> /dev/null`
-    if ( !File.exist?(outfile) )
-      puts "\tAn error occurred converting #{infile}."
-    else
-      FileUtils::mkdir_p(File.dirname(jobs[infile][:target]))
-      FileUtils::mv(outfile, jobs[infile][:target])
-    end
+    FileUtils::mkdir_p(File.dirname(spec[:target]))
+    FileUtils::mv(outfile, spec[:target])
   end
-  done += 1
+  progress.increment
 }
 puts "\r#{prefix}Done.     "
 puts "Your music awaits you, have fun!"
