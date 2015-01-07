@@ -16,9 +16,33 @@
 # You should have received a copy of the GNU General Public License
 # along with music2thumb. If not, see <http://www.gnu.org/licenses/>.
 
+
 # Copies music files to a thumbdrive/music player, converting down to
 # the best format your player supports.
-# TODO describe
+# Takes a specification file and a target directory.
+#
+# Specification files are plain text files with one line per item of the form
+#
+#   artist/album/track
+#
+# where track (transfer whole album) or album and track (transfer all from
+# the given artist) can be dropped. All three positions are matched as substrings,
+# so
+#
+#   Stones/Dirty
+#
+# will match all tracks of Rolling Stones - Dirty Work (and maybe other albums).
+# You can not drop the artist but you can use e.g.
+#
+#   */Dirty
+#
+# to match all albums with Dirty in the name, by any artist.
+#
+# You can cancel the process at any time by hitting CTRL+C (partial files do not 
+# end up in the target directory) and re-issue the command again at a later time; 
+# select do neither clean nor overwrite and the script continues where you halted 
+# it earlier.
+
  
 # Requires avconv with FLAC, Vorbis and MP3 support
 # (depending on which conversions need to happen).
