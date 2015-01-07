@@ -252,8 +252,17 @@ begin
       if ( !File.exist?(outfile) )
         progress.log("\tAn error occurred converting #{infile}.")
       else
-        FileUtils::mkdir_p(File.dirname(spec[:target]))
-        FileUtils::mv(outfile, spec[:target])
+        # Writing to thumbdrives can be slow, so do don't block here
+        #Thread.new {
+        #  begin
+            FileUtils::mkdir_p(File.dirname(spec[:target]))
+            FileUtils::mv(outfile, spec[:target])
+        #  rescue => e
+        #    progress.log("\tAn error occurred: #{e.to_s}")
+            # TODO should we raise to the main Thread?
+            # cf http://stackoverflow.com/a/9095369/539599
+         # end
+        #}
       end
     rescue Interrupt
       raise Interrupt if processes == -1 # Sequential fallback needs exception!
