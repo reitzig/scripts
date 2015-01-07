@@ -120,12 +120,6 @@ if ( jobs.empty? )
   Process.exit
 end
 
-puts "We will transfer #{jobs.size} files, #{jobs.select { |k,v| v[:conv] != nil }.size} of which will be converted."
-print "This may take while. Continue? [Y/n] "
-if ( $stdin.gets.strip != "Y" )
-  Process.exit
-end
-
 # Check target folder
 overwrite = false
 if ( !File.exist?(target) )
@@ -142,6 +136,24 @@ elsif ( Dir.entries(target).size > 2 ) # . and .. are always there
       overwrite = true
     end
   end
+end
+
+# Reduce job list to those we actually have to do
+if ( !overwrite )
+  jobs.select! { |infile, spec|
+    !File.exist?(spec[:target])
+  }
+end
+
+if ( jobs.empty? )
+  puts "All files are already there, so there is nothing left to do!"
+  Process.exit
+end
+
+puts "We will transfer #{jobs.size} files, #{jobs.select { |k,v| v[:conv] != nil }.size} of which will be converted first."
+print "This may take while. Continue? [Y/n] "
+if ( $stdin.gets.strip != "Y" )
+  Process.exit
 end
 
 # Copy/Convert to target folder
