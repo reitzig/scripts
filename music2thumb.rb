@@ -42,6 +42,9 @@
 # end up in the target directory) and re-issue the command again at a later time; 
 # select do neither clean nor overwrite and the script continues where you halted 
 # it earlier.
+#
+# Note that we silently ignore all files that do not have one of the supported 
+# input formats (FLAC, OGG, MP3). 
 
  
 # Requires avconv with FLAC, Vorbis and MP3 support
@@ -49,7 +52,7 @@
 
 require 'fileutils'
 
-all_formats = ["flac", "ogg", "mp3"]
+all_formats = ["flac", "ogg", "mp3"] # Ordered decreasingly by quality/preference
 conversions = {
   "ogg->mp3"  => '"avconv -v quiet -i \"#{infile}\" -qscale 6 -map_metadata 0:s:0 \"#{outfile}\""',
   "flac->mp3" => '"avconv -v quiet -i \"#{infile}\" -qscale 6 -map_metadata 0:g:0 \"#{outfile}\""',
