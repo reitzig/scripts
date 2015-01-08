@@ -15,7 +15,8 @@ Comes with a [style](https://github.com/akerbos/scripts/blob/master/mkimgpage.cs
 
 ###[`music2thumb.rb`](https://github.com/akerbos/scripts/blob/master/music2thumb.rb)
 
-Copies music files to a thumbdrive/music player, converting down to the best format your player supports.
+Copies music files to a thumbdrive/music player, converting down to
+the best format your player supports and renaming for FAT32 compatibility.
 
 ### [`pavol.rb`](https://github.com/akerbos/scripts/blob/master/pavol.rb)
 

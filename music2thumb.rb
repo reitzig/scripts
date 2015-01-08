@@ -18,7 +18,7 @@
 
 
 # Copies music files to a thumbdrive/music player, converting down to
-# the best format your player supports.
+# the best format your player supports and renaming for FAT32 compatibility.
 # Takes a specification file and a target directory.
 #
 # Specification files are plain text files with one line per item of the form
@@ -67,7 +67,10 @@ conversions = {
 # We assume that the necessary tools are installed.
 # TODO Ask for target quality, at least when downcoding from FLAC or WAV?
 
-sanitizer = /^[\s\.]*(.*?)[\s\.]*$/
+# We need to sanitise paths for FAT32
+def sanitize(s)
+ s.sub(/^[\s\.]*(.*?)[\s\.]*$/, "\\1").gsub(/[:;\|\*\?]/, "")
+end
 
 # Parameters: input file, target folder
 if ( ARGV.size < 2 )
@@ -135,7 +138,7 @@ filespecs.each { |spec|
 
   Dir[parts.join("/")].each { |infile| # TODO make case insensitive?
     # Sanitise path for FAT32
-    clean_infile = infile.split("/").map { |p| p.sub(sanitizer, "\\1") }.join("/")
+    clean_infile = infile.split("/").map { |p| sanitize(p) }.join("/")
   
     if ( infile =~ /\.(#{formats.join("|")})$/ )
       outfile = "#{target}/#{clean_infile}"
