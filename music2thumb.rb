@@ -67,6 +67,8 @@ conversions = {
 # We assume that the necessary tools are installed.
 # TODO Ask for target quality, at least when downcoding from FLAC or WAV?
 
+sanitizer = /^[\s\.]*(.*?)[\s\.]*$/
+
 # Parameters: input file, target folder
 if ( ARGV.size < 2 )
   puts "Usage: music2thumb <spec file> <target folder>"
@@ -131,14 +133,17 @@ filespecs.each { |spec|
   # We only want to consider supported file types
   parts[2] = "#{parts[2]}.{#{all_formats.join(",")}}"
 
-  Dir[parts.join("/")].each { |infile|
+  Dir[parts.join("/")].each { |infile| # TODO make case insensitive?
+    # Sanitise path for FAT32
+    clean_infile = infile.split("/").map { |p| p.sub(sanitizer, "\\1") }.join("/")
+  
     if ( infile =~ /\.(#{formats.join("|")})$/ )
-      outfile = "#{target}/#{infile}"
+      outfile = "#{target}/#{clean_infile}"
       conv = nil
     else
       # Find best allowed format
       target_format = all_formats.drop_while { |e| !formats.include?(e) }.first
-      outfile = "#{target}/#{infile.gsub(/\.(#{all_formats.join("|")})$/, ".#{target_format}")}"
+      outfile = "#{target}/#{clean_infile.gsub(/\.(#{all_formats.join("|")})$/, ".#{target_format}")}"
       conv = "#{infile.split(".").last}->#{target_format}"
     end
     
@@ -187,60 +192,60 @@ if ( $stdin.gets.strip != "Y" )
   Process.exit
 end
 
-# Copy to target folder
-# Do this separately and first in order to get the quick stuff over with 
-# (more music on target should the user abort) and make time estimators
-# somewhat more robust. Also, parallelisation does not help for (I/O-bound)
-# copying.
-progress = ProgressBar.create(:title => "Copying   ", 
-                              :total => jobs.select { |k,v| v[:conv] == nil }.size,
-                              :format => "%t: [%B] [%c/%C] %E",
-                              :progress_mark => "|",
-                              :remainder_mark => ".")
-jobs.select { |k,v| v[:conv] == nil }.each { |infile, spec| 
-   # TODO catch IO exceptions (in particular, target may be out of space)
-  FileUtils::mkdir_p(File.dirname(spec[:target]))
-  FileUtils::cp(infile, spec[:target])
-  progress.increment
-}
-
-# Convert to target folder
-processes = -1
 begin
-  gem "system"
-  require 'system'
-  gem "parallel"
-  require 'parallel'
-  
-  print "Looking for CPU count..."
-  cores = System::CPU.count  
-  print "\rHow many processes do you want us to use? [0-#{cores}] "
-  processes = [[$stdin.gets.strip.to_i, 1].max, cores].min
-  puts "\tOkay, using #{processes} processes."
-rescue Gem::LoadError
-  puts "Hint: You can speed up conversion by installing gems 'parallel' and 'system'!"
-  
-  # Define skeleton class for graceful sequential fallback
-  module Parallel
-    class << self
-      def each(hash, options={}, &block)
-        hash.each { |k,v|
-          block.call(k, v)
-          options[:finish].call(nil, nil, nil)
-        }
-        array
+  # Copy to target folder
+  # Do this separately and first in order to get the quick stuff over with 
+  # (more music on target should the user abort) and make time estimators
+  # somewhat more robust. Also, parallelisation does not help for (I/O-bound)
+  # copying.
+  progress = ProgressBar.create(:title => "Copying   ", 
+                                :total => jobs.select { |k,v| v[:conv] == nil }.size,
+                                :format => "%t: [%B] [%c/%C] %E",
+                                :progress_mark => "|",
+                                :remainder_mark => ".")
+  jobs.select { |k,v| v[:conv] == nil }.each { |infile, spec| 
+     # TODO catch IO exceptions (in particular, target may be out of space)
+    FileUtils::mkdir_p(File.dirname(spec[:target]))
+    FileUtils::cp(infile, spec[:target])
+    progress.increment
+  }
+
+  # Convert to target folder
+  processes = -1
+  begin
+    gem "system"
+    require 'system'
+    gem "parallel"
+    require 'parallel'
+    
+    print "Looking for CPU count..."
+    cores = System::CPU.count  
+    print "\rHow many processes do you want us to use? [0-#{cores}] "
+    processes = [[$stdin.gets.strip.to_i, 1].max, cores].min
+    puts "\tOkay, using #{processes} processes."
+  rescue Gem::LoadError
+    puts "Hint: You can speed up conversion by installing gems 'parallel' and 'system'!"
+    
+    # Define skeleton class for graceful sequential fallback
+    module Parallel
+      class << self
+        def each(hash, options={}, &block)
+          hash.each { |k,v|
+            block.call(k, v)
+            options[:finish].call(nil, nil, nil)
+          }
+          array
+        end
       end
     end
   end
-end
 
-progress = ProgressBar.create(:title => "Converting", 
-                              :total => jobs.select { |k,v| v[:conv] != nil }.size,
-                              :format => "%t: [%B] [%c/%C] %E",
-                              :progress_mark => "|",
-                              :remainder_mark => ".")
+  progress = ProgressBar.create(:title => "Converting", 
+                                :total => jobs.select { |k,v| v[:conv] != nil }.size,
+                                :format => "%t: [%B] [%c/%C] %E",
+                                :progress_mark => "|",
+                                :remainder_mark => ".")
 
-begin
   Parallel.each(jobs.select { |k,v| v[:conv] != nil },
                 :in_processes => processes,
                 :finish  => lambda { |e,i,r| progress.increment }) { |infile,spec| 
