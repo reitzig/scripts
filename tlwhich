@@ -16,15 +16,29 @@
 # You should have received a copy of the GNU General Public License
 # along with tlwhich. If not, see <http://www.gnu.org/licenses/>.
 
-# TeX Live Which looks for command and environment definitions in the packages
-# and document classes installed in the local TeX Live installation.
-# Pass a document or environment name (without leading slash); even
-# grep-compatibel regular expressions are possible.
+# TeX Live Which looks for package, class, command and environment definitions 
+# in the *.sty and *.cls files installed in the local TeX Live installation.
+# Pass a name (without leading slash); even grep-compatibel regular expressions 
+# are possible.
 
 # TODO: sort result; switch to hide redefinitions; switch(es) to hide sty/cls; output matched command name?
 
 # Where to search?
-texhome="/usr/local/texlive/2013";
+texhome="/usr/local/texlive/2014";
+
+# Set up the list of things to look for
+declare -A types;
+types["pkg"]="package";
+types["cls"]="class";
+types["env"]="environment";
+types["cmd"]="command";
+
+declare -A patterns;
+# Look for package definitions
+patterns["pkg"]="\\\\ProvidesPackage{${1}}";
+
+# Look for class definitions
+patterns["cls"]="\\\\ProvidesClass{${1}}";
 
 # What environment definitions to look for?
 # - newenvironment
@@ -35,7 +49,7 @@ texhome="/usr/local/texlive/2013";
 #
 # We *don't* look for pairs \def\env{...} ... \def\endenv{...} -- that's 
 # not really feasible without context-free (or TeX) parsing.
-envpattern="\\\\((re)?newenvironment|NewEnviron|(Declare|New|Renew|Provide)DocumentEnvironment)x?\*?{${1}}";
+patterns["env"]="\\\\((re)?newenvironment|NewEnviron|(Declare|New|Renew|Provide)DocumentEnvironment)x?\*?{${1}}";
 
 # What command definitions to look for?
 # - def (and variants)
@@ -49,26 +63,19 @@ envpattern="\\\\((re)?newenvironment|NewEnviron|(Declare|New|Renew|Provide)Docum
 # - CheckCommand
 # - Those from xparse
 # - Those from xargs
-cmdpattern="\\\\((e|x|g)?def|(Declare|New|Renew|Provide|DeclareExpandable|Check)DocumentCommand|(DeclareRobust|Check)Command|((re)?new|provide)command)x?\*?({\\\\${1}}|\\\\${1}(\[|\{))";
+patterns["cmd"]="\\\\((e|x|g)?def|(Declare|New|Renew|Provide|DeclareExpandable|Check)DocumentCommand|(DeclareRobust|Check)Command|((re)?new|provide)command)x?\*?({\\\\${1}}|\\\\${1}(\[|\{))";
 
-envres=`grep --include=*.{sty,cls} -l -r -E "${envpattern}" "${texhome}"`;
-cmdres=`grep --include=*.{sty,cls} -l -r -E "${cmdpattern}" "${texhome}"`;
-
-if [[ "${envres}" != "" ]];
-then
-  echo "Files that define environment ${1}:";
-  for f in ${envres};
-  do
-    echo `basename ${f}`;
-  done;
-fi
-
-if [[ "${cmdres}" != "" ]];
-then
-  if [[ "${envres}" != "" ]]; then echo ""; fi
-  echo "Files that define command ${1}:";
-  for f in ${cmdres};
-  do
-    echo `basename ${f}`;
-  done;
-fi
+foundsth=0;
+for type in ${!types[@]}; do
+  res=`grep --include=*.{sty,cls} -l -r -E "${patterns[$type]}" "${texhome}"`;
+  if [[ "${res}" != "" ]];
+  then
+    if [[ ${foundsth} -gt 0 ]]; then echo ""; fi
+    echo "Files that define ${types[$type]} ${1}:";
+    for f in ${res};
+    do
+      echo -e '\t'`basename "${f}"`;
+    done;
+    foundsth=1;
+  fi
+done;
