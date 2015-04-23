@@ -79,3 +79,7 @@ for type in ${!types[@]}; do
     foundsth=1;
   fi
 done;
+
+if [[ ${foundsth} -gt 0 ]]; then 
+  echo -e '\n'"Get full paths by running 'kpsewhich <file>'"; 
+fi
