@@ -53,8 +53,8 @@ under window managers that do not have convenient support for multiple layouts.
 ### [`tlwhich`](https://github.com/akerbos/scripts/blob/master/tlwhich)
 
 Ever wondered which package provided that one LaTeX command you remember?
-TeX Live Which looks for command and environment definitions in the packages
-and document classes installed in the local TeX Live installation.
+TeX Live Which looks for command, environment, package and document class definitions 
+in your local TeX Live installation.
 
 ### [`tikz2png`](https://github.com/akerbos/scripts/blob/master/tikz2png)
 
