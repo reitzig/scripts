@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-# Copyright 2014, Raphael Reitzig
+# Copyright 2015, Raphael Reitzig
 # <code@verrech.net>
 #
 # mkimgpage is free software: you can redistribute it and/or modify
@@ -20,10 +20,20 @@
 # TODO describe
  
 # Requires ImageMagick, pandoc
-# Requires gem 'zip' for zipping
+# Requires gems 'dimensions' and 'ruby-progressbar'.
+# Optionally, gems 'zip' (only for zipping) and 'parallel'.
 
 require 'fileutils'
 require 'pathname'
+
+begin
+  gem "dimensions"
+  require 'dimensions'
+  require 'ruby-progressbar'
+rescue Gem::LoadError
+  Puts "\tRequires gems 'dimensions' and 'ruby-progressbar'."
+  Process.exit
+end
 
 # Defaults
 thumbsize = 100
@@ -32,7 +42,8 @@ bannerwidth = 890 # Chosen to fit body width and padding. Height is thumbsize/2.
 package   = '"#{input.sub(/\.\w+$/,"")}"'
 
 if ARGV.size == 0
-  puts "  Usage: mkimgpage input [thumbsize] [fullsize] [package] [zip]"
+  puts "\tUsage: mkimgpage input [thumbsize] [fullsize] [package] [zip]"
+  Process.exit
 end
 
 # Read Parameters
@@ -111,44 +122,76 @@ else
 end
 
 # Copy images, create thumbnails
-progress_prefix = "Converting images ... "
-j = 0
-total = 2*images.size + banners.size
+
+# Try to load parallel gem; define sequential alternative if it is not installed
+parallel = true
+ begin
+  gem "parallel"
+  require 'parallel'
+rescue Gem::LoadError
+  puts "\tHint: You can speed this up by installing gem 'parallel'!"
+  parallel = false
+  module Parallel
+    class << self
+      def each(hash, options={}, &block)
+        hash.each { |k,v|
+          block.call(k, v)
+          options[:finish].call(nil, nil, nil)
+        }
+        array
+      end
+    end
+  end
+end
+
+# Create progress bar
+progressbar = ProgressBar.create(:title => "Converting images   ", 
+                                 :total => images.size * 2 + banners.size,
+                                 :format => "%t: [%B] [%c/%C] %E",
+                                 :progress_mark => "|",
+                                 :remainder_mark => ".")
 
 # Convert normal images
-images.each { |i| # TODO make parallel
-  print "\r#{progress_prefix}[#{j}/#{total}]"; STDOUT.flush
-  if File.exist?("#{i[:file]}")
-    if !File.exist?("#{tmpdir}/#{i[:name]}#{i[:type]}")
-      # Shrink image so that the longer side is <= fullsize
-      IO::popen("convert \"#{i[:file]}\" -resize \"#{fullsize}x#{fullsize}>\"" +
-                " \"#{tmpdir}/#{i[:name]}#{i[:type]}\"") { |p|
-        out = p.readlines.join("\n").strip
-        if ( out != nil && out.length > 0 )
-          errors.push(out)
-        end
-      }
+errors = errors + Parallel.map(images, :finish  => lambda { |e,i,r| progressbar.progress += 2 }) { |i|
+  begin
+    errors = []
+    if File.exist?("#{i[:file]}")
+      if !File.exist?("#{tmpdir}/#{i[:name]}#{i[:type]}")
+        # Shrink image so that the longer side is <= fullsize
+        IO::popen("convert \"#{i[:file]}\" -resize \"#{fullsize}x#{fullsize}>\"" +
+                  " \"#{tmpdir}/#{i[:name]}#{i[:type]}\"") { |p|
+          out = p.readlines.join("\n").strip
+          if ( out != nil && out.length > 0 )
+            errors.push(out)
+          end
+        }
+      end
+      if (   !File.exist?("#{tmpdir}/#{i[:name]}_thumb#{i[:type]}") \
+          || Dimensions.width("#{tmpdir}/#{i[:name]}_thumb#{i[:type]}") != thumbsize )
+        # Shrink image so that the longer side is <= thumbsize and crop the other dimension down
+        IO::popen("convert \"#{i[:file]}\" -resize \"#{thumbsize}x#{thumbsize}^\"" +
+                  " -gravity center -extent \"#{thumbsize}x#{thumbsize}\"" +
+                  " \"#{tmpdir}/#{i[:name]}_thumb#{i[:type]}\"") { |p|
+          out = p.readlines.join("\n").strip
+          if ( out != nil && out.length > 0 )
+            errors.push(out)
+          end
+        }
+      end
+    else
+      puts "\n  Image '#{i[:file]}' is not there."
     end
-    if !File.exist?("#{tmpdir}/#{i[:name]}_thumb#{i[:type]}")
-      # Shrink image so that the longer side is <= thumbsize and crop the other dimension down
-      IO::popen("convert \"#{i[:file]}\" -resize \"#{thumbsize}x#{thumbsize}^\"" +
-                " -gravity center -extent \"#{thumbsize}x#{thumbsize}\"" +
-                " \"#{tmpdir}/#{i[:name]}_thumb#{i[:type]}\"") { |p|
-        out = p.readlines.join("\n").strip
-        if ( out != nil && out.length > 0 )
-          errors.push(out)
-        end
-      }
-    end
-  else
-    puts "\n  Image '#{i[:file]}' is not there."
+    errors
+  rescue Interrupt
+    raise Interrupt if !parallel # Sequential fallback needs exception!
+  rescue => e
+    puts "\tAn error occurred: #{e.to_s}"
+    # TODO Should we break? Let's see what kinds of errors we get...
   end
-  j += 2
-}
+}.flatten
 
 # Convert banners (which need no thumbnail)
-banners.each { |i| # TODO make parallel
-  print "\r#{progress_prefix}[#{j}/#{total}]"; STDOUT.flush
+banners.each { |i| # TODO make parallel?
   if File.exist?("#{i[:file]}")
     if !File.exist?("#{tmpdir}/#{i[:name]}_banner#{i[:type]}")
       # Shrink image so that width is <= bannersize and cut to height of thumbsize/2
@@ -162,12 +205,10 @@ banners.each { |i| # TODO make parallel
       }
     end
   else
-    puts "\n  Image '#{i[:file]}' is not there."
+    puts "\n\tImage '#{i[:file]}' is not there."
   end
-  j += 1
+  progressbar.increment
 }
-
-puts "\r#{progress_prefix}Done" + " "*10
 
 # Package the whole thing up
 if zip
