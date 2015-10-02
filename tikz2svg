@@ -93,7 +93,7 @@ do
 
   if [ -e ${tmp}/${f%.tikz}_tmp/${f%.tikz}.dvi ];
   then
-    dvisvgm ${tmp}/${f%.tikz}_tmp/${f%.tikz}.dvi >> ${tmp}/tikz2svg_${f%.tikz}_log 2>&1;
+    dvisvgm --no-fonts ${tmp}/${f%.tikz}_tmp/${f%.tikz}.dvi >> ${tmp}/tikz2svg_${f%.tikz}_log 2>&1;
     echo " Done.";
   else
     echo " Error. See ${tmp}/tikz2svg_${f%.tikz}_log";
