@@ -45,6 +45,10 @@ file per instance, e.g. for stapling printers.
 Downloads photos from [compatible](http://www.gphoto.org/doc/manual/FAQ.html#FAQ-camera-support) cameras without
 resorting to mounting them as mass-storage devices. Also rotates them according to information provided by the camera.
 
+###[`showqr`]((https://github.com/akerbos/scripts/blob/master/showqr)
+
+Renders and displays text as qr-code.
+
 ### [`switchkbl`](https://github.com/akerbos/scripts/blob/master/switchkbl)
 
 Rotates through a set of hard-coded  (but easily changed) keyboard layouts. Useful for tying to a shortcut (or direct use)

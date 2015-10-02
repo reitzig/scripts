@@ -88,13 +88,12 @@ do
 
   dir=`pwd`;
   cd ${tmp};
-  pdflatex --shell-escape -file-line-error -interaction=nonstopmode -output-directory=${f%.tikz}_tmp ${f%.tikz}.tex > tikz2svg_${f%.tikz}_log;
+  latex --shell-escape -file-line-error -interaction=nonstopmode -output-directory=${f%.tikz}_tmp ${f%.tikz}.tex > tikz2svg_${f%.tikz}_log;
   cd "${dir}";
 
-  if [ -e ${tmp}/${f%.tikz}_tmp/${f%.tikz}.pdf ];
+  if [ -e ${tmp}/${f%.tikz}_tmp/${f%.tikz}.dvi ];
   then
-    inkscape -l ${tmp}/${f%.tikz}.svg ${tmp}/${f%.tikz}_tmp/${f%.tikz}.pdf;
-    mv ${tmp}/${f%.tikz}.svg ./
+    dvisvgm ${tmp}/${f%.tikz}_tmp/${f%.tikz}.dvi >> ${tmp}/tikz2svg_${f%.tikz}_log 2>&1;
     echo " Done.";
   else
     echo " Error. See ${tmp}/tikz2svg_${f%.tikz}_log";
