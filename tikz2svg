@@ -2,8 +2,8 @@
 #
 # This script converts TikZ images to SVG.
 # It needs
-# * pdflatex with packages tikz, standalone
-# * Inkscape
+# * latex with packages tikz, standalone
+# * dvisvgm
 #
 # Copyright 2015 Raphael Reitzig
 #
