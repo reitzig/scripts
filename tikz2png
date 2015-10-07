@@ -74,11 +74,11 @@ for f in ${*};
 do
   echo -n "Processing ${f} ...";
 
-  preamble="${latex_preamble} `cat ${f} | grep "^%p%" | sed 's/^...//'`";
+  preamble="${latex_preamble}\n`cat ${f} | grep -E "^[[:space:]]*%p%" | sed 's/^[[:space:]]*...//'`";
 
-  echo "\documentclass[border=${tikz_border}]{standalone}\usepackage{tikz}${preamble}\begin{document}" > ${tmp}/${f%.tikz}.tex;
-  echo "\begingroup\tikzset{every picture/.style={scale=${tikz_scale}}}%" >> ${tmp}/${f%.tikz}.tex;
-  cat ${f} | grep -v "^%p%" >> ${tmp}/${f%.tikz}.tex;
+  echo -e "\documentclass[border=${tikz_border}]{standalone}\n\usepackage{tikz}${preamble}\\\\begin{document}" > ${tmp}/${f%.tikz}.tex;
+  #echo "\begingroup\tikzset{every picture/.style={scale=${tikz_scale}}}%" >> ${tmp}/${f%.tikz}.tex;
+  cat ${f} | grep -v "^[[:space:]]*%p%" >> ${tmp}/${f%.tikz}.tex;
   echo "\endgroup\end{document}" >> ${tmp}/${f%.tikz}.tex;
 
   # Uncomment if standalone is not available. Make sure to configure the path above.
