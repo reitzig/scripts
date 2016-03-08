@@ -31,7 +31,7 @@ begin
   require 'dimensions'
   require 'ruby-progressbar'
 rescue Gem::LoadError
-  Puts "\tRequires gems 'dimensions' and 'ruby-progressbar'."
+  puts "\tRequires gems 'dimensions' and 'ruby-progressbar'."
   Process.exit
 end
 
