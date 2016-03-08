@@ -29,10 +29,10 @@ script=`basename $0`;
 target="`basename "$(pwd)"`";
 
 echo -n "[${script}] Creating LaTeX...";
-echo "\documentclass[a4paper]{article}\usepackage[utf8]{inputenc}\usepackage{graphicx,adjustbox}\usepackage[margin=1.5cm]{geometry}\pagestyle{empty}\begin{document}" > "${target}.tex";
+echo "\documentclass{article}\usepackage[utf8]{inputenc}\usepackage{graphicx,adjustbox}\usepackage[a4paper,margin=1.5cm]{geometry}\pagestyle{empty}\begin{document}" > "${target}.tex";
 for f in ${*};
 do
-  echo "\mbox{}\vfill\begin{center}\begin{adjustbox}{max width=\linewidth}\includegraphics{${f}}\end{adjustbox}\end{center}\vfill\clearpage" >> "${target}.tex";
+  echo "\mbox{}\vfill\begin{center}\begin{adjustbox}{max width=\textwidth,max height=\textheight}\includegraphics{${f}}\end{adjustbox}\end{center}\vfill\clearpage" >> "${target}.tex";
 done;
 echo "\end{document}" >> "${target}.tex"
 echo " Done";

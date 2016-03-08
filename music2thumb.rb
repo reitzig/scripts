@@ -54,6 +54,7 @@
 # For parallel conversion, install gems 'parallel' and 'system' (may require 'bundler').
 
 require 'fileutils'
+gem 'ruby-progressbar'
 require 'ruby-progressbar'
 
 all_formats = ["flac", "ogg", "mp3"] # Ordered decreasingly by quality/preference
@@ -69,7 +70,8 @@ conversions = {
 
 # We need to sanitise paths for FAT32
 def sanitize(s)
- s.sub(/^[\s\.]*(.*?)[\s\.]*$/, "\\1").gsub(/[:;\|\*\?]/, "")
+  s.sub(/^[\s\.]*(.*?)[\s\.]*$/, "\\1").gsub(/[:;\|\*\?]/, "")
+  # TODO get rid of umlauts (and what else?)
 end
 
 # Parameters: input file, target folder
@@ -139,7 +141,10 @@ filespecs.each { |spec|
   Dir[parts.join("/")].each { |infile| # TODO make case insensitive?
     # Sanitise path for FAT32
     clean_infile = infile.split("/").map { |p| sanitize(p) }.join("/")
-  
+    # TODO add an option for flat hierarchy:
+    #      some players may fare better with e.g. "artist - album" instead of "artist/album"
+    #  --> when option is set, join all but the last element with " - ".
+    
     if ( infile =~ /\.(#{formats.join("|")})$/ )
       outfile = "#{target}/#{clean_infile}"
       conv = nil
@@ -282,8 +287,12 @@ begin
     end
   }
 
+  # TODO some players (e.g. in cars) use file-system order. As an option, call fatsort.
+
   puts "Your music awaits you, have fun!"
 rescue Interrupt, Parallel::DeadWorker
   progress.stop
   puts "Cancelled"
 end
+
+# TODO some players use device order; call fatsort?
