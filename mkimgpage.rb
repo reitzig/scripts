@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-# Copyright 2015, Raphael Reitzig
+# Copyright 2016, Raphael Reitzig
 # <code@verrech.net>
 #
 # mkimgpage is free software: you can redistribute it and/or modify
@@ -62,9 +62,15 @@ footer = "#{File.dirname(Pathname.new(__FILE__).realpath)}/#{File.basename(__FIL
 print "Scanning input file ... "
 images = []
 banners = []
+files = []
 text = nil
 File.open(input,"r") { |f|
   text = f.read
+  text.scan(/(?:^|\s+)\[.*?\]\((.+?)\)/) { |f|
+    if File.exist?(f[0])
+      files.push(f[0])
+    end
+  }
   text.gsub!(/!(!|banner)\[([^\[\]]*)\]\(([^\(\)]+)\)/) { |match|
     # TODO add thumbnail weight?
     desc = match[$2]
@@ -208,6 +214,11 @@ banners.each { |i| # TODO make parallel?
     puts "\n\tImage '#{i[:file]}' is not there."
   end
   progressbar.increment
+}
+
+# Copy linked files to tmp folder
+files.each { |f|
+  FileUtils::cp(f, "#{tmpdir}/")
 }
 
 # Package the whole thing up
