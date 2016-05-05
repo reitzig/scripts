@@ -105,6 +105,7 @@ File.open("#{tmpdir}/index.md", "w") { |f|
   f.write(text)
 }
 
+# TODO add an option that allows to link a CSS file (default: style.css)
 IO::popen("pandoc -o \"#{tmpdir}/index.html\" -t html5 -H \"#{cssfile}\" -A \"#{footer}\" -s -S \"#{tmpdir}/index.md\" 2>&1") { |p|
   out = p.readlines.join("\n").strip!
   if ( out != nil && out.length > 0 )
