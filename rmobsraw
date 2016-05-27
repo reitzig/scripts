@@ -1,0 +1,11 @@
+#!/bin/bash
+
+c=0;
+for f in "${@}"; do
+  if [ ! -f "${f%.CR2}.JPG" ]
+  then
+    rm "${f}";
+    c=$[c + 1];
+  fi
+done
+echo "${c} deleted";
