@@ -1,0 +1,18 @@
+#!/usr/bin/ruby
+
+require 'fileutils'
+
+ARGV.each { |file|
+  if File.exist?(file) && !File.directory?(file)
+    exif = `exiftool "#{file}" | grep -E "(Error|Create Date)"`
+    if exif.strip.size > 0
+      exif = exif.split("\n")[0].split(/\s+/)
+      if exif[0] != "Error"
+        filename = exif[3].gsub(":", "-") + " " + exif[4].gsub(":", ".") + File.extname(file)
+        if filename != file && !File.exist?(filename)
+          FileUtils::mv(file, File.dirname(file) + "/" + filename)
+        end
+      end
+    end
+  end
+}
