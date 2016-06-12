@@ -59,9 +59,9 @@ require 'ruby-progressbar'
 
 all_formats = ["flac", "ogg", "mp3"] # Ordered decreasingly by quality/preference
 conversions = {
-  "ogg->mp3"  => '"avconv -v quiet -y -i \"#{infile}\" -qscale 6 -map_metadata 0:s:0 \"#{outfile}\""',
-  "flac->mp3" => '"avconv -v quiet -y -i \"#{infile}\" -qscale 6 -map_metadata 0:g:0 \"#{outfile}\""',
-  "flac->ogg" => '"avconv -v quiet -y -i \"#{infile}\" -codec libvorbis -qscale 3 -map_metadata 0 \"#{outfile}\""'
+  "ogg->mp3"  => '"avconv -v quiet -y -i \"#{infile}\" -qscale:a 6 -map_metadata 0:s:0 \"#{outfile}\""',
+  "flac->mp3" => '"avconv -v quiet -y -i \"#{infile}\" -qscale:a 6 -map_metadata 0:g:0 \"#{outfile}\""',
+  "flac->ogg" => '"avconv -v quiet -y -i \"#{infile}\" -codec:a libvorbis -qscale:a 6 -map_metadata 0 \"#{outfile}\""'
 }
 # We only convert to the best allowed format and (hopefully) never up,
 # so other directions are not necessary.
@@ -151,6 +151,8 @@ filespecs.each { |spec|
     else
       # Find best allowed format
       target_format = all_formats.drop_while { |e| !formats.include?(e) }.first
+      # TODO we get bad errors if we only have bad files (e.g. source mp3 but not allowed)
+      #      Treat properly!
       outfile = "#{target}/#{clean_infile.gsub(/\.(#{all_formats.join("|")})$/, ".#{target_format}")}"
       conv = "#{infile.split(".").last}->#{target_format}"
     end
@@ -195,7 +197,7 @@ if ( jobs.empty? )
 end
 
 puts "We will transfer #{jobs.size} files, #{jobs.select { |k,v| v[:conv] != nil }.size} of which will be converted first."
-print "This may take while. Continue? [Y/n] "
+print "This may take a while. Continue? [Y/n] "
 if ( $stdin.gets.strip != "Y" )
   Process.exit
 end
@@ -238,7 +240,7 @@ begin
     module Parallel
       class << self
         def each(hash, options={}, &block)
-          hash.each { |k,v|
+          hash.each { |k,v| # TODO Exception thrown here
             block.call(k, v)
             options[:finish].call(nil, nil, nil)
           }
@@ -255,8 +257,9 @@ begin
                                 :remainder_mark => ".")
 
   Parallel.each(jobs.select { |k,v| v[:conv] != nil },
-                :in_processes => processes,
-                :finish  => lambda { |e,i,r| progress.increment }) { |infile,spec| 
+                in_processes: processes,
+                finish:       lambda { |e,i,r| progress.increment }) { |infile,spec|
+                #progress: "Converting") { |infile,spec|  
     begin
       # Write to /tmp first in order to avoid many writes to thumbdrive
       outfile = "/tmp/#{spec[:target].gsub("/", "")}"
@@ -283,6 +286,7 @@ begin
       # finish in a timely manner.
     rescue => e
       progress.log("\tAn error occurred: #{e.to_s}")
+      #progress.log("\t\t#{e.backtrace.join("\n\t\t")}")
       # TODO Should we break? Let's see what kinds of errors we get...
     end
   }
