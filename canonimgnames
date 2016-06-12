@@ -2,6 +2,7 @@
 
 require 'fileutils'
 
+renamed = 0
 ARGV.each { |file|
   if File.exist?(file) && !File.directory?(file)
     exif = `exiftool "#{file}" | grep -E "(Error|Create Date)"`
@@ -11,8 +12,10 @@ ARGV.each { |file|
         filename = exif[3].gsub(":", "-") + " " + exif[4].gsub(":", ".") + File.extname(file)
         if filename != file && !File.exist?(filename)
           FileUtils::mv(file, File.dirname(file) + "/" + filename)
+          renamed += 1
         end
       end
     end
   end
 }
+puts "Renamed #{renamed}, skipped #{ARGV.size - renamed}"
