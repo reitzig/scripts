@@ -24,6 +24,10 @@ a:hover {
   text-decoration : none;
 }
 
+li {
+  margin : 0.5ex 0 0.5ex 0;
+}
+
 div.banner {
   text-align : center;
   margin : 0;
