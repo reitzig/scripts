@@ -208,88 +208,97 @@ begin
   # (more music on target should the user abort) and make time estimators
   # somewhat more robust. Also, parallelisation does not help for (I/O-bound)
   # copying.
-  progress = ProgressBar.create(:title => "Copying   ", 
-                                :total => jobs.select { |k,v| v[:conv] == nil }.size,
-                                :format => "%t: [%B] [%c/%C] %E",
-                                :progress_mark => "|",
-                                :remainder_mark => ".")
-  jobs.select { |k,v| v[:conv] == nil }.each { |infile, spec| 
-     # TODO catch IO exceptions (in particular, target may be out of space)
-    FileUtils::mkdir_p(File.dirname(spec[:target]))
-    FileUtils::cp(infile, spec[:target])
-    progress.increment
-  }
+  copyjobs = jobs.select { |k,v| v[:conv] == nil }
+  
+  if copyjobs.size > 0
+    progress = ProgressBar.create(:title => "Copying   ", 
+                                  :total => copyjobs.size,
+                                  :format => "%t: [%B] [%c/%C] %E",
+                                  :progress_mark => "|",
+                                  :remainder_mark => ".")
+    copyjobs.each { |infile, spec| 
+       # TODO catch IO exceptions (in particular, target may be out of space)
+      FileUtils::mkdir_p(File.dirname(spec[:target]))
+      FileUtils::cp(infile, spec[:target])
+      progress.increment
+    }
+  end
+
 
   # Convert to target folder
-  processes = -1
-  begin
-    gem "system"
-    require 'system'
-    gem "parallel"
-    require 'parallel'
-    
-    print "Looking for CPU count..."
-    cores = System::CPU.count  
-    print "\rHow many processes do you want us to use? [0-#{cores}] "
-    processes = [[$stdin.gets.strip.to_i, 1].max, cores].min
-    puts "\tOkay, using #{processes} processes."
-  rescue Gem::LoadError
-    puts "Hint: You can speed up conversion by installing gems 'parallel' and 'system'!"
-    
-    # Define skeleton class for graceful sequential fallback
-    module Parallel
-      class << self
-        def each(hash, options={}, &block)
-          hash.each { |k,v| # TODO Exception thrown here
-            block.call(k, v)
-            options[:finish].call(nil, nil, nil)
-          }
-          array
+  convjobs = jobs.select { |k,v| v[:conv] != nil }
+  
+  if convjobs.size > 0
+    processes = -1
+    begin
+      gem "system"
+      require 'system'
+      gem "parallel"
+      require 'parallel'
+      
+      print "Looking for CPU count..."
+      cores = System::CPU.count  
+      print "\rHow many processes do you want us to use? [0-#{cores}] "
+      processes = [[$stdin.gets.strip.to_i, 1].max, cores].min
+      puts "\tOkay, using #{processes} processes."
+    rescue Gem::LoadError
+      puts "Hint: You can speed up conversion by installing gems 'parallel' and 'system'!"
+      
+      # Define skeleton class for graceful sequential fallback
+      module Parallel
+        class << self
+          def each(hash, options={}, &block)
+            hash.each { |k,v| # TODO Exception thrown here
+              block.call(k, v)
+              options[:finish].call(nil, nil, nil)
+            }
+            array
+          end
         end
       end
     end
-  end
 
-  progress = ProgressBar.create(:title => "Converting", 
-                                :total => jobs.select { |k,v| v[:conv] != nil }.size,
-                                :format => "%t: [%B] [%c/%C] %E",
-                                :progress_mark => "|",
-                                :remainder_mark => ".")
+    progress = ProgressBar.create(:title => "Converting", 
+                                  :total => convjobs.size,
+                                  :format => "%t: [%B] [%c/%C] %E",
+                                  :progress_mark => "|",
+                                  :remainder_mark => ".")
 
-  Parallel.each(jobs.select { |k,v| v[:conv] != nil },
-                in_processes: processes,
-                finish:       lambda { |e,i,r| progress.increment }) { |infile,spec|
-                #progress: "Converting") { |infile,spec|  
-    begin
-      # Write to /tmp first in order to avoid many writes to thumbdrive
-      outfile = "/tmp/#{spec[:target].gsub("/", "")}"
-  
-      `#{eval(conversions[spec[:conv]])} &> /dev/null`    
-      if ( !File.exist?(outfile) )
-        progress.log("\tAn error occurred converting #{infile}.")
-      else
-        # Writing to thumbdrives can be slow, so do don't block here
-        #Thread.new {
-        #  begin
-            FileUtils::mkdir_p(File.dirname(spec[:target]))
-            FileUtils::mv(outfile, spec[:target])
-        #  rescue => e
-        #    progress.log("\tAn error occurred: #{e.to_s}")
-            # TODO should we raise to the main Thread?
-            # cf http://stackoverflow.com/a/9095369/539599
-         # end
-        #}
+    Parallel.each(convjobs,
+                  in_processes: processes,
+                  finish:       lambda { |e,i,r| progress.increment }) { |infile,spec|
+                  #progress: "Converting") { |infile,spec|  
+      begin
+        # Write to /tmp first in order to avoid many writes to thumbdrive
+        outfile = "/tmp/#{spec[:target].gsub("/", "")}"
+    
+        `#{eval(conversions[spec[:conv]])} &> /dev/null`    
+        if ( !File.exist?(outfile) )
+          progress.log("\tAn error occurred converting #{infile}.")
+        else
+          # Writing to thumbdrives can be slow, so do don't block here
+          #Thread.new {
+          #  begin
+              FileUtils::mkdir_p(File.dirname(spec[:target]))
+              FileUtils::mv(outfile, spec[:target])
+          #  rescue => e
+          #    progress.log("\tAn error occurred: #{e.to_s}")
+              # TODO should we raise to the main Thread?
+              # cf http://stackoverflow.com/a/9095369/539599
+           # end
+          #}
+        end
+      rescue Interrupt
+        raise Interrupt if processes == -1 # Sequential fallback needs exception!
+        # Note that some avconv process may be left running. Let's hope they
+        # finish in a timely manner.
+      rescue => e
+        progress.log("\tAn error occurred: #{e.to_s}")
+        #progress.log("\t\t#{e.backtrace.join("\n\t\t")}")
+        # TODO Should we break? Let's see what kinds of errors we get...
       end
-    rescue Interrupt
-      raise Interrupt if processes == -1 # Sequential fallback needs exception!
-      # Note that some avconv process may be left running. Let's hope they
-      # finish in a timely manner.
-    rescue => e
-      progress.log("\tAn error occurred: #{e.to_s}")
-      #progress.log("\t\t#{e.backtrace.join("\n\t\t")}")
-      # TODO Should we break? Let's see what kinds of errors we get...
-    end
-  }
+    }
+  end
 
   # TODO some players (e.g. in cars) use file-system order. As an option, call fatsort.
 
