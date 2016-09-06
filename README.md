@@ -3,6 +3,11 @@ Assorted Shellscripts
 
 This a just a collection of arguably useful shell scripts.
 
+###[`canonimgnames`](https://github.com/akerbos/scripts/blob/master/canonimgnames)
+
+Renames images using EXIF data so that they conform to a standard, date-based
+naming scheme.
+
 ###[`imgs2pdf`](https://github.com/akerbos/scripts/blob/master/imgs2pdf)
 
 Uses LaTeX to create a (portrait A4) PDF from the images passed as parameters.
@@ -45,6 +50,10 @@ file per instance, e.g. for stapling printers.
 Downloads photos from [compatible](http://www.gphoto.org/doc/manual/FAQ.html#FAQ-camera-support) cameras without
 resorting to mounting them as mass-storage devices. Also rotates them according to information provided by the camera.
 
+###[`rmd2html`](https://github.com/akerbos/scripts/blob/master/rmd2html)
+
+An elementary one-liner that compiles Rmd files into HTML.
+
 ###[`showqr`]((https://github.com/akerbos/scripts/blob/master/showqr)
 
 Renders and displays text as qr-code.
@@ -67,6 +76,10 @@ Converts TikZ images specified in their own file to PNG. Check the script for qu
 ### [`tikz2svg`](https://github.com/akerbos/scripts/blob/master/tikz2svg)
 
 Converts TikZ images specified in their own file to SVG.
+
+### [`transpose-latex-table.rb`](https://github.com/akerbos/scripts/blob/master/transpose-latex-table.rb)
+
+Transposes a regular LaTeX `tabular` table.
 
 ### [`watch`](https://github.com/akerbos/scripts/blob/master/watch)
 

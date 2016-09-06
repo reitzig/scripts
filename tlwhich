@@ -29,7 +29,7 @@
 # * match substrings (optionally?)
 
 # Where to search?
-texhome="/usr/local/texlive/2015";
+texhome="/usr/local/texlive/2016";
 
 # Set up the list of things to look for
 types=( "cmd" "env" "pkg" "cls" )
