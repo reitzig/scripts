@@ -58,7 +58,7 @@ An elementary one-liner that compiles Rmd files into HTML.
 
 Removes obsolete RAW image files, i.e. such whose companion JPGs have been deleted.
 
-### [`showqr`]((https://github.com/akerbos/scripts/blob/master/showqr)
+### [`showqr`](https://github.com/akerbos/scripts/blob/master/showqr)
 
 Renders and displays text as qr-code.
 
