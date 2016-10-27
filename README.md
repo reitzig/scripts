@@ -8,17 +8,17 @@ This a just a collection of arguably useful shell scripts.
 Renames images using EXIF data so that they conform to a standard, date-based
 naming scheme.
 
-###[`imgs2pdf`](https://github.com/akerbos/scripts/blob/master/imgs2pdf)
+### [`imgs2pdf`](https://github.com/akerbos/scripts/blob/master/imgs2pdf)
 
 Uses LaTeX to create a (portrait A4) PDF from the images passed as parameters.
 Shrinks images to fit the page.
 
-###[`mkimgpage.rb`](https://github.com/akerbos/scripts/blob/master/mkimgpage.rb)
+### [`mkimgpage.rb`](https://github.com/akerbos/scripts/blob/master/mkimgpage.rb)
 
 Takes a Markdown file with special image tags and creates an image gallery from it.
 Comes with a [style](https://github.com/akerbos/scripts/blob/master/mkimgpage.css) and [footer](https://github.com/akerbos/scripts/blob/master/mkimgpage_footer.html) you might want to adapt.
 
-###[`music2thumb.rb`](https://github.com/akerbos/scripts/blob/master/music2thumb.rb)
+### [`music2thumb.rb`](https://github.com/akerbos/scripts/blob/master/music2thumb.rb)
 
 Copies music files to a thumbdrive/music player, converting down to
 the best format your player supports and renaming for FAT32 compatibility.
@@ -50,11 +50,15 @@ file per instance, e.g. for stapling printers.
 Downloads photos from [compatible](http://www.gphoto.org/doc/manual/FAQ.html#FAQ-camera-support) cameras without
 resorting to mounting them as mass-storage devices. Also rotates them according to information provided by the camera.
 
-###[`rmd2html`](https://github.com/akerbos/scripts/blob/master/rmd2html)
+### [`rmd2html`](https://github.com/akerbos/scripts/blob/master/rmd2html)
 
 An elementary one-liner that compiles Rmd files into HTML.
 
-###[`showqr`]((https://github.com/akerbos/scripts/blob/master/showqr)
+### [`rmobsraw.rb`](https://github.com/akerbos/scripts/blob/master/rmobsraw.rb)
+
+Removes obsolete RAW image files, i.e. such whose companion JPGs have been deleted.
+
+### [`showqr`]((https://github.com/akerbos/scripts/blob/master/showqr)
 
 Renders and displays text as qr-code.
 
