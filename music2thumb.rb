@@ -68,10 +68,23 @@ conversions = {
 # We assume that the necessary tools are installed.
 # TODO Ask for target quality, at least when downcoding from FLAC or WAV?
 
-# We need to sanitise paths for FAT32
-def sanitize(s)
-  s.sub(/^[\s\.]*(.*?)[\s\.]*$/, "\\1").gsub(/[:;\|\*\?]/, "")
+# We need to sanitise file names for FAT32
+def sanitize(s)  
+  if s.include?(".") # file
+    parts = s.split(".")
+    basename = parts[0..-2].join(".")
+    ending = parts.last
+  else # directory
+    basename = s
+    ending = nil
+  end
+  
+  basename.sub!(/^[\s\.]*(.*?)[\s\.]*$/, "\\1") # Remove prefices and suffices of whitespace and periods
+  basename.gsub!(/[:;\|\*\?"]/, "")             # Remove illegal characters
+  basename = basename[0..50]                    # Cut off too long names TODO what's the exact limit?
   # TODO get rid of umlauts (and what else?)
+  
+  "#{basename}" + (if !ending.nil? then ".#{ending}" else "" end)
 end
 
 # Parameters: input file, target folder
@@ -303,7 +316,7 @@ begin
   # TODO some players (e.g. in cars) use file-system order. As an option, call fatsort.
 
   puts "Your music awaits you, have fun!"
-rescue Interrupt, Parallel::DeadWorker
+rescue Interrupt#, Parallel::DeadWorker # TODO if there are no conversion tasks, Parallel is not defined!
   progress.stop
   puts "Cancelled"
 end
