@@ -16,7 +16,7 @@ def lineToDatetime(line)
       datetime = parts[1].split(/\s+/)
       puts datetime.to_s if DEBUG
       date = datetime[0].strip.gsub(":", "-")
-      time = datetime[1].strip.gsub(":", ".")
+      time = datetime[1].split(/[\D]/)[0..2].join(".")
       "#{date} #{time}"
     end
   else
@@ -27,13 +27,14 @@ end
 renamed = 0
 ARGV.each { |file|
   if File.exist?(file) && !File.directory?(file)
+    puts file if DEBUG
     exif = `exiftool '#{file}' | grep -E "(Error|Create Date|Date/Time Original)"`
     if exif.strip.size > 0
       exif = exif.split("\n").map {|line| lineToDatetime(line) }
       if exif.include?("Error")
         next
       else  
-        filename = exif.max # is that always the right thing to do?
+        filename = "#{exif.max}.#{file.split(".").last}" # is that always the right thing to do?
         if filename != file && !File.exist?(filename)
           puts filename if DEBUG
           FileUtils::mv(file, File.dirname(file) + "/" + filename) unless DEBUG
