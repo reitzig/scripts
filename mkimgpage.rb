@@ -64,6 +64,7 @@ zip       = ARGV.size > 4 && ARGV[4] == "zip"
 tmpdir    = "/tmp/mkimgpage_#{package}"
 cssfile   = "#{File.dirname(Pathname.new(__FILE__).realpath)}/#{File.basename(__FILE__, File.extname(__FILE__))}.css"
 audiothumb = "#{File.dirname(Pathname.new(__FILE__).realpath)}/#{File.basename(__FILE__, File.extname(__FILE__))}_audiothumb.png"
+playoverlay = "#{File.dirname(Pathname.new(__FILE__).realpath)}/#{File.basename(__FILE__, File.extname(__FILE__))}_playoverlay.png"
 footer = "#{File.dirname(Pathname.new(__FILE__).realpath)}/#{File.basename(__FILE__, File.extname(__FILE__))}_footer.html"
 
 # Parse all image references
@@ -72,50 +73,68 @@ images = []
 banners = []
 files = []
 text = nil
+missing = []
+
 File.open(input,"r") { |f|
   text = f.read
   text.scan(/(?:^|\s+)\[.*?\]\((.+?)\)/) { |f|
     if File.exist?(f[0])
       files.push(f[0])
+    elsif !f[0].start_with?("#") # is anchor link
+      missing.push(f[0])
     end
   }
   text.gsub!(/!(!|banner)\[([^\[\]]*)\]\(([^\(\)]+)\)/) { |match|
     # TODO add thumbnail weight?
     desc = match[$2]
     file = match[$3]
-    
-    type  = File.extname(file)
-    name  = File.basename(file, type)
-    mimetype = MimeMagic.by_magic(File.open(file)).type.split("/")[0].to_sym
-    # should be one of 'video', 'image', 'audio'
-    
-    if ( match[$1] == "!" )
-      images.push({:file => file, :name => name, :type => type, :mimetype => mimetype})
-      
-      thumb = if mimetype == :image
-          "#{name}_thumb#{type}"
-        elsif mimetype == :video
-          "#{name}_thumb.jpg"
-        elsif mimetype == :audio
-          "audiothumb.png"
-        else
-          puts "\n\tYou linked '#{file}' that does not seem to be image, video or audio. Uh oh..."
-          ""
-        end
-      # TODO Should we support others? PDF comes to mind.
         
-      "  <a class=\"imglink\" href=\"#{name}#{type}\"><img src=\"#{thumb}\" title=\"#{desc}\" alt=\"#{desc}\"/></a>"
-    else ( match[$1] == "banner" )
-      if mimetype != :image
-        puts "\n\tNon-image banners won't work right!"
-      end
-      
-      banners.push({:file => file, :name => name,:type => type})
-      "  <div class=\"banner\"><img src=\"#{name}_banner#{type}\" title=\"#{desc}\" alt=\"#{desc}\"/></div>"
+    if File.exist?(file)    
+        type  = File.extname(file)
+        name  = File.basename(file, type)
+        mimetype = MimeMagic.by_magic(File.open(file)).type.split("/")[0].to_sym
+        # should be one of 'video', 'image', 'audio'
+        
+        if ( match[$1] == "!" )          
+          thumb = if mimetype == :image
+              if type == ".gif"
+                "#{name}_thumb.jpg"
+              else
+                "#{name}_thumb#{type}"
+              end
+            elsif mimetype == :video
+              "#{name}_thumb.jpg"
+            elsif mimetype == :audio
+              "audiothumb.png"
+            else
+              puts "\n\tYou linked '#{file}' that does not seem to be image, video or audio. Uh oh..."
+              ""
+            end
+          # TODO Should we support others? PDF comes to mind.
+            
+          images.push({:file => file, :name => name, 
+                       :type => type, :mimetype => mimetype,
+                       :thumb => thumb})
+            
+          "  <a class=\"imglink\" href=\"#{name}#{type}\"><img src=\"#{thumb}\" title=\"#{desc}\" alt=\"#{desc}\"/></a>"
+        else ( match[$1] == "banner" )
+          if mimetype != :image
+            puts "\n\tNon-image banners won't work right!"
+          end
+          
+          banners.push({:file => file, :name => name,:type => type})
+          "  <div class=\"banner\"><img src=\"#{name}_banner#{type}\" title=\"#{desc}\" alt=\"#{desc}\"/></div>"
+        end
+    else
+        missing.push(file)
     end
   }
 }
 puts "Done"
+
+missing.each { |f|
+    puts "File #{f} not found." 
+}
 
 # Make sure everything is set up
 if text == nil
@@ -192,6 +211,7 @@ errors = errors + Parallel.map(images, :finish  => lambda { |e,i,r| progressbar.
   begin
     errors = []
     
+    # Copy original file, potentially resizing
     if File.exist?("#{i[:file]}")
       if !File.exist?("#{tmpdir}/#{i[:name]}#{i[:type]}")
         if i[:mimetype] == :image
@@ -209,28 +229,39 @@ errors = errors + Parallel.map(images, :finish  => lambda { |e,i,r| progressbar.
           FileUtils::cp(i[:file], "#{tmpdir}/#{i[:file]}")
         end
       end
-      if (   !File.exist?("#{tmpdir}/#{i[:name]}_thumb#{i[:type]}") \
-          || Dimensions.width("#{tmpdir}/#{i[:name]}_thumb#{i[:type]}") != thumbsize )
+      
+      # Create thumbnail
+      if (   !File.exist?("#{tmpdir}/#{i[:thumb]}") \
+          || Dimensions.width("#{tmpdir}/#{i[:thumb]}") != thumbsize )
         if i[:mimetype] == :image
+          inexpr = "#{i[:file]}"
+          annotexpr = ""
+          if i[:type] == ".gif"
+            # For GIFs, use first frame
+            inexpr += "[0]"
+            annotexpr = "-gravity Center -draw \"image Over 0,0 #{thumbsize/3},#{thumbsize/3} '#{playoverlay}'\"" 
+          end          
+           
           # Shrink image so that the longer side is <= thumbsize and crop the other dimension down
-          IO::popen("convert \"#{i[:file]}\" -resize \"#{thumbsize}x#{thumbsize}^\"" +
+          IO::popen("convert \"#{inexpr}\" -resize \"#{thumbsize}x#{thumbsize}^\"" +
                     " -gravity center -extent \"#{thumbsize}x#{thumbsize}\"" +
-                    " \"#{tmpdir}/#{i[:name]}_thumb#{i[:type]}\" 2>&1") { |p|
+                    " #{annotexpr}" +
+                    " \"#{tmpdir}/#{i[:thumb]}\" 2>&1") { |p|
             out = p.readlines.join("\n").strip
             if ( out != nil && out.length > 0 )
               errors.push(out)
             end
           }
         elsif i[:mimetype] == :video
-          IO::popen("ffmpegthumbnailer -i \"#{i[:file]}\" -o \"#{tmpdir}/#{i[:name]}_thumb.jpg\" -s#{thumbsize} -a -f 2>&1") { |p|
+          IO::popen("ffmpegthumbnailer -i \"#{i[:file]}\" -o \"#{tmpdir}/#{i[:thumb]}\" -s#{thumbsize} -a -f 2>&1") { |p|
             out = p.readlines.join("\n").strip
             if ( out != nil && out.length > 0 )
               errors.push(out)
             end
           }
-        elsif i[:mimetype] == :audio && (!File.exist?("#{tmpdir}/audiothumb.png") || Dimensions.width("#{tmpdir}/audiothumb.png") != thumbsize)
+        elsif i[:mimetype] == :audio
           IO::popen("convert \"#{audiothumb}\" -resize \"#{thumbsize}>x#{thumbsize}>\"" +
-                    " \"#{tmpdir}/audiothumb.png\" 2>&1") { |p|
+                    " \"#{tmpdir}/#{i[:thumb]}\" 2>&1") { |p|
             out = p.readlines.join("\n").strip
             if ( out != nil && out.length > 0 )
               errors.push(out)
@@ -239,7 +270,7 @@ errors = errors + Parallel.map(images, :finish  => lambda { |e,i,r| progressbar.
         end
       end
     else
-      puts "\n  Image '#{i[:file]}' is not there."
+      puts "\n  File '#{i[:file]}' is not there."
     end
     errors
   rescue Interrupt
