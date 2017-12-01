@@ -25,21 +25,28 @@
 # * `pavol +` increases volume.
 # * `pavol -` decreases volume.
 
-SOURCE = 1
+# Pick a unique substring of one of the names listed by `pacmd list-sinks | grep name:`
+SOURCE = "Logitech_USB_Headset" # headphones
+#SOURCE = "DigiHug_USB" # DAC
 INTERVAL = 5
 
+# Determine the "count index" of SOURCE (not necessarily == what index below then computes!)
+sinks = IO::popen("pacmd list-sinks | grep name:").readlines
+SRCINDEX = sinks.index { |l| l.include? SOURCE }
+puts SRCINDEX
+
 def current
-  c = IO::popen("pacmd \"list-sinks\" | grep -E '^\\s+volume:'").readlines[SOURCE]
+  c = IO::popen("pacmd \"list-sinks\" | grep -E '^\\s+volume:'").readlines[SRCINDEX]
   return c.split(" ").select { |s| s =~ /\d+%/ }.last.sub("%", "").strip.to_i
 end
 
 def max
-  c = IO::popen("pacmd \"list-sinks\" | grep \"volume steps\"").readlines[SOURCE]
+  c = IO::popen("pacmd \"list-sinks\" | grep \"volume steps\"").readlines[SRCINDEX]
   return c.split(" ").last.strip.to_i - 1
 end
 
 def index
-  c = IO::popen("pacmd \"list-sinks\" | grep index").readlines[SOURCE]
+  c = IO::popen("pacmd \"list-sinks\" | grep index").readlines[SRCINDEX]
   return c.split(" ").last.strip.to_i
 end
 
@@ -48,7 +55,7 @@ def set(v)
 end
 
 def muted
-  c = IO::popen("pacmd \"list-sinks\" | grep muted").readlines[SOURCE]
+  c = IO::popen("pacmd \"list-sinks\" | grep muted").readlines[SRCINDEX]
   return c.split(" ").last.strip == "yes"
 end
 
