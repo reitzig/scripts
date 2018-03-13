@@ -1,7 +1,6 @@
 #!/usr/bin/ruby
 
-# Copyright 2013, Raphael Reitzig
-# <code@verrech.net>
+# Copyright 2018, Raphael Reitzig
 #
 # pdfinvert is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
