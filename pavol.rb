@@ -1,6 +1,6 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 
-# Copyright 2013-2017, Raphael Reitzig
+# Copyright 2013-2018, Raphael Reitzig
 # <code@verrech.net>
 #
 # pavol is free software: you can redistribute it and/or modify
@@ -24,29 +24,35 @@
 # * `pavol !` (un)mutes pulseaudio depending on current state.
 # * `pavol +` increases volume.
 # * `pavol -` decreases volume.
+#
+# In case multiple sinks are defined below, add the index of the one
+# you want to control as second parameter (defaults to `0`).
 
 # Pick a unique substring of one of the names listed by `pacmd list-sinks | grep name:`
-SOURCE = "Logitech_USB_Headset" # headphones
-#SOURCE = "DigiHug_USB" # DAC
+SINKS = ["Logitech_USB_Headset"#,  # headphones
+        # "DigiHug_USB" # DAC
+        ]
 INTERVAL = 5
+
+SINK = ARGV.size > 1 ? SINKS[ARGV[1].to_i] : SINKS[0] 
 
 # Determine the "count index" of SOURCE (not necessarily == what index below then computes!)
 sinks = IO::popen("pacmd list-sinks | grep name:").readlines
-SRCINDEX = sinks.index { |l| l.include? SOURCE }
-puts SRCINDEX
+SNKINDEX = sinks.index { |l| l.include? SINK }
+# puts SNKINDEX
 
 def current
-  c = IO::popen("pacmd \"list-sinks\" | grep -E '^\\s+volume:'").readlines[SRCINDEX]
+  c = IO::popen("pacmd \"list-sinks\" | grep -E '^\\s+volume:'").readlines[SNKINDEX]
   return c.split(" ").select { |s| s =~ /\d+%/ }.last.sub("%", "").strip.to_i
 end
 
 def max
-  c = IO::popen("pacmd \"list-sinks\" | grep \"volume steps\"").readlines[SRCINDEX]
+  c = IO::popen("pacmd \"list-sinks\" | grep \"volume steps\"").readlines[SNKINDEX]
   return c.split(" ").last.strip.to_i - 1
 end
 
 def index
-  c = IO::popen("pacmd \"list-sinks\" | grep index").readlines[SRCINDEX]
+  c = IO::popen("pacmd \"list-sinks\" | grep index").readlines[SNKINDEX]
   return c.split(" ").last.strip.to_i
 end
 
@@ -55,7 +61,7 @@ def set(v)
 end
 
 def muted
-  c = IO::popen("pacmd \"list-sinks\" | grep muted").readlines[SRCINDEX]
+  c = IO::popen("pacmd \"list-sinks\" | grep muted").readlines[SNKINDEX]
   return c.split(" ").last.strip == "yes"
 end
 
