@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2015 Raphael Reitzig
+# Copyright 2015--2018 Raphael Reitzig
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,10 +16,37 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 # Requires: qrencode, display
+#           For tiling workaround under i3, also: wmctrl
 
 # Shows the text found as CLI parameters as a qr-code.
 
-f=/tmp/`date +'%N'`.png
+set -o pipefail
+
+f=`mktemp --suff=.png`;
 qrencode -o ${f} "${1}";
-display ${f};
+display ${f} & 
+pid="$!"
+
+# If i3 is active, trickery:
+if wmctrl -m | grep "Name: i3" > /dev/null; then
+  # cf. https://unix.stackexchange.com/a/474300/17409 
+
+  # Wait for the window to open
+  winname="`basename "${f}" | sed -e 's/\\//./'`"
+  winid=''
+  while : ; do
+    winid="`wmctrl -l | awk -vwinname="${winname}" '$5==winname  {print $1; exit}'`"
+    [[ -z "${winid}" ]] || break
+  done
+
+  # Focus the window of display
+  wmctrl -ia "${winid}"
+  
+  # Make it float
+  i3-msg floating enable > /dev/null;
+fi
+
+# Wait for the user to close display and clean up
+wait "${pid}";
 rm ${f};
+
