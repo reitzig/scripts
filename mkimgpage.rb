@@ -1,7 +1,6 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 
-# Copyright 2016, Raphael Reitzig
-# <code@verrech.net>
+# Copyright 2016--2018, Raphael Reitzig
 #
 # mkimgpage is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

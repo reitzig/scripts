@@ -1,7 +1,6 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 
-# Copyright 2015, Raphael Reitzig
-# <code@verrech.net>
+# Copyright 2015--2018, Raphael Reitzig
 #
 # music2thumb is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

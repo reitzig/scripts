@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 
 # Copyright 2013-2018, Raphael Reitzig
-# <code@verrech.net>
 #
 # pavol is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
