@@ -47,11 +47,11 @@
 # input formats (FLAC, OGG, MP3). 
 
  
-# Requires avconv with FLAC, Vorbis and MP3 support
+# Requires ffmpeg with FLAC, Vorbis and MP3 support
 # (depending on which conversions need to happen)
 # as well as gem 'ruby-progressbar'
 #
-# For parallel conversion, install gems 'parallel' and 'system' (may require 'bundler').
+# For parallel conversion, install gem 'parallel' (may require 'bundler').
 
 require 'fileutils'
 gem 'ruby-progressbar'
@@ -59,9 +59,9 @@ require 'ruby-progressbar'
 
 all_formats = ["flac", "ogg", "mp3"] # Ordered decreasingly by quality/preference
 conversions = {
-  "ogg->mp3"  => '"avconv -v quiet -y -i \"#{infile}\" -qscale:a 6 -map_metadata 0:s:0 \"#{outfile}\""',
-  "flac->mp3" => '"avconv -v quiet -y -i \"#{infile}\" -qscale:a 6 -map_metadata 0:g:0 \"#{outfile}\""',
-  "flac->ogg" => '"avconv -v quiet -y -i \"#{infile}\" -codec:a libvorbis -qscale:a 6 -map_metadata 0 \"#{outfile}\""'
+  "ogg->mp3"  => '"ffmpeg -v quiet -y -i \"#{infile}\" -qscale:a 6 -map_metadata 0:s:0 \"#{outfile}\""',
+  "flac->mp3" => '"ffmpeg -v quiet -y -i \"#{infile}\" -qscale:a 6 -map_metadata 0:g:0 \"#{outfile}\""',
+  "flac->ogg" => '"ffmpeg -v quiet -y -i \"#{infile}\" -codec:a libvorbis -qscale:a 6 -map_metadata 0 \"#{outfile}\""'
 }
 # We only convert to the best allowed format and (hopefully) never up,
 # so other directions are not necessary.
@@ -244,10 +244,10 @@ begin
   if convjobs.size > 0
     processes = -1
     begin
-      gem "system"
-      require 'system'
-      gem "parallel"
+      gem 'parallel'
       require 'parallel'
+      gem 'system'
+      require 'system'
       
       print "Looking for CPU count..."
       cores = System::CPU.count  
@@ -255,7 +255,7 @@ begin
       processes = [[$stdin.gets.strip.to_i, 1].max, cores].min
       puts "\tOkay, using #{processes} processes."
     rescue Gem::LoadError
-      puts "Hint: You can speed up conversion by installing gems 'parallel' and 'system'!"
+      puts "Hint: You can speed up conversion by installing gem 'parallel'!"
       
       # Define skeleton class for graceful sequential fallback
       module Parallel
@@ -265,7 +265,7 @@ begin
               block.call(k, v)
               options[:finish].call(nil, nil, nil)
             }
-            array
+            hash
           end
         end
       end
