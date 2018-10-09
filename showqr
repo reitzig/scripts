@@ -16,30 +16,48 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 # Requires: qrencode, display
-#           For tiling workaround under i3, also: wmctrl
+#           For tiling workaround under i3, also: wmctrl, awk
 
-# Shows the text found as CLI parameters as a qr-code.
+# Shows text found as CLI parameters as a QR-code.
+# If no parameters are given, reads from STDIN.
 
 set -o pipefail
 
 f=`mktemp --suff=.png`;
-qrencode -o ${f} "${1}";
+
+# Convert STDIN resp. first parameter 
+if [ $# -eq 0 ]; then
+  qrencode -o ${f} < /dev/stdin
+else
+  qrencode -o ${f} "$*";
+fi
+
+# Open the QR code for viewing
 display ${f} & 
 pid="$!"
 
-# If i3 is active, trickery:
+# If i3 is active, trickery to get a floating viewer 
+# instead of madness (cf. https://github.com/ImageMagick/ImageMagick/issues/1213).
 if wmctrl -m | grep "Name: i3" > /dev/null; then
   # cf. https://unix.stackexchange.com/a/474300/17409 
 
-  # Wait for the window to open
+  # Can't search for the PID (display doesn't tell it to wmctrl).
+  # Turns out the window name is
+  #
+  #     ImageMagick: tmp.tmp.XXXX.png
+  #
+  # so we can use that to search for the window ID.
+  # We use only the filename which ends up in its own column in awk.
   winname="`basename "${f}" | sed -e 's/\\//./'`"
+  
+  # Wait for the window to open
   winid=''
   while : ; do
     winid="`wmctrl -l | awk -vwinname="${winname}" '$5==winname  {print $1; exit}'`"
     [[ -z "${winid}" ]] || break
   done
 
-  # Focus the window of display
+  # Focus the window
   wmctrl -ia "${winid}"
   
   # Make it float
