@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2015, Raphael Reitzig
+# Copyright 2015--2018, Raphael Reitzig
 # <code@verrech.net>
 #
 # tlwhich is free software: you can redistribute it and/or modify
@@ -28,8 +28,22 @@
 # * search in .tex files as well?
 # * match substrings (optionally?)
 
+set -o pipefail
+
 # Where to search?
-texhome="/usr/local/texlive/2016";
+if ! which tlmgr > /dev/null; then
+    echo "TeXlive not found";
+    exit 1
+fi
+
+pdftex="$(readlink -f "`which pdftex`")";
+texhome="${pdftex%bin/*/pdftex}";
+
+if [ ! -d "${texhome}" ] || [ ! -f "${texhome}/install-tl" ]; then
+    echo "TeXlive does not live at ${texhome%pdftex}" 
+    # in error cases, above replacement may not have been effective
+    exit 1
+fi
 
 # Set up the list of things to look for
 types=( "cmd" "env" "pkg" "cls" )
