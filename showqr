@@ -62,6 +62,7 @@ if wmctrl -m | grep "Name: i3" > /dev/null; then
   
   # Make it float
   i3-msg floating enable > /dev/null;
+  i3-msg move position center > /dev/null;
 fi
 
 # Wait for the user to close display and clean up
