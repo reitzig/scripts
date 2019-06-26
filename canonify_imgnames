@@ -31,7 +31,7 @@ date_from_exif = ->(file) do
     
     if parts.size >= 2
       if parts[0] == "Error"
-        "Error"
+        nil
       else
         datetime = parts[1].split(/\s+/)
         puts "     -> #{datetime.to_s}" if DEBUG
@@ -40,18 +40,18 @@ date_from_exif = ->(file) do
         "#{date} #{time}"
       end
     else
-      "Error"
+      nil
     end
   end
 
   exif = `exiftool '#{file}' | grep -E "(Error|Create Date|Date/Time Original)"`
   if exif.strip.size > 0
     puts " - Found EXIF tags" if DEBUG
-    exif = exif.split("\n").map { |line| line_to_datetime(line) }
-    if exif.include?("Error")
-      puts " - Errors: #{exif}" if DEBUG
+    exif_results = exif.split("\n").map { |line| line_to_datetime(line) }.reject { |e| e.nil? }
+    if exif_results.empty?
+      puts " - No usable EXIF tags found: #{exif}" if DEBUG
     else  
-      return exif.max # is that always the right thing to do?
+      return exif_results.max # is that always the right thing to do?
     end
   end
 
