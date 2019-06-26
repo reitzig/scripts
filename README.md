@@ -3,10 +3,10 @@ Assorted Shellscripts
 
 This a just a collection of arguably useful shell scripts.
 
-### [`canonimgnames`](https://github.com/reitzig/scripts/blob/master/canonimgnames)
+### [`canonify_imgnames`](https://github.com/reitzig/scripts/blob/master/canonify_imgnames)
 
-Renames images using EXIF data so that they conform to a standard, date-based
-naming scheme.
+Renames images using EXIF data or certain filename patterns so that they conform to a standard, 
+date-time-based naming scheme.
 
 ### [`imgs2pdf`](https://github.com/reitzig/scripts/blob/master/imgs2pdf)
 
