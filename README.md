@@ -8,6 +8,10 @@ This a just a collection of arguably useful shell scripts.
 Renames images using EXIF data or certain filename patterns so that they conform to a standard, 
 date-time-based naming scheme.
 
+### [`charge-reminder.go`](https://github.com/reitzig/scripts/blob/master/charge-reminder.go)
+
+Periodically checks the current battery level and alerts the user if it is low (and not charging).
+
 ### [`imgs2pdf`](https://github.com/reitzig/scripts/blob/master/imgs2pdf)
 
 Uses LaTeX to create a (portrait A4) PDF from the images passed as parameters.
