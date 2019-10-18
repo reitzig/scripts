@@ -1,0 +1,91 @@
+#!/usr/bin/env ruby
+
+# Provides a narrow interface to xrandr that allows you to switch easily between
+# single, dual, and mirror screen setups.
+# Tries to avoid some pitfalls like enabling disconnected devices.
+#
+# Requirements: xrandr
+
+MODES = [:single, :mirror, :double]
+CONNECTED_DISPLAYS = `xrandr | grep ' connected' | cut -d ' ' -f1`.split("\n").map(&:strip)
+DISCONNECTED_DISPLAYS = `xrandr | grep ' disconnected' | cut -d ' ' -f1`.split("\n").map(&:strip)
+DISPLAYS = CONNECTED_DISPLAYS + DISCONNECTED_DISPLAYS
+
+# # # # # # # # #
+# Parse inputs
+# # # # # # # # #
+
+unless (2..3).include?(ARGV.size)
+    puts <<~USAGE
+        Usage: screen_setup (#{MODES.map(&:to_s).join("|")}) display..."
+            - In single mode, pass only one device. 
+              All others will be disabled.
+            - In mirror mode, pass two devices.
+              The first will be the primary display, the other a mirror.
+            - In dual mode, pass two devices. 
+              The first will be the left and primary display.
+        USAGE
+    exit 1
+end
+
+mode = ARGV[0].downcase.to_sym
+unless MODES.include?(mode)
+    STDERR.puts "Unknown mode '#{mode}': use one of #{MODES.map(&:to_s).join(", ")}"
+    exit 1
+end
+
+display1 = ARGV[1]
+unless CONNECTED_DISPLAYS.include?(display1)
+    STDERR.puts "Unknown display '#{display1}': use one of #{CONNECTED_DISPLAYS.map(&:to_s).join(", ")}"
+    exit 1
+end
+
+display2 = mode == :single ? nil : ARGV[2]
+if display2.nil? && mode != :single
+    STDERR.puts "Mode #{mode} requires two CONNECTED_DISPLAYS."
+    exit 1
+elsif !CONNECTED_DISPLAYS.include?(display2) && mode != :single
+    STDERR.puts "Unknown display '#{display2}': use one of #{CONNECTED_DISPLAYS.map(&:to_s).join(", ")}"
+    exit 1
+end
+
+SELECTED_DISPLAYS = [display1, display2].compact
+puts "Going to enter #{mode} mode with #{SELECTED_DISPLAYS.join(", ")}"
+
+# # # # # # # # #
+# Activate and arrange screens
+# # # # # # # # #
+
+xrandr_command = ["xrandr"]
+case mode
+when :single
+    xrandr_command += ["--output", display1, "--auto", "--primary"]
+when :mirror
+    xrandr_command += ["--output", display1, "--auto", "--primary"]
+    xrandr_command += ["--output", display2, "--auto", "--same-as", display1]
+    # TODO: What if the resolutions don't match?
+when :double
+    xrandr_command += ["--output", display1, "--auto", "--primary"]
+    xrandr_command += ["--output", display2, "--auto", "--right-of", display1]
+    # TODO: How to find out the _user_-preferred resolution(s)? Poll?
+else
+    STDERR.outs "xrandr setup for mode #{mode} not implemented"
+end
+
+# Turn off all unselected displays
+xrandr_command += (DISPLAYS - SELECTED_DISPLAYS).flat_map { |d| 
+    ["--output", d, "--off"]
+}
+
+exec *xrandr_command
+
+# TODO: Configure i3 (if present)
+
+# case mode
+# when :single, :mirror
+#     # TODO: create workspace config; reload i3
+# #when :double
+#     # TODO: create workspace config; reload i3
+# else
+#     STDERR.outs "i3 config for mode #{mode} not implemented"
+# end

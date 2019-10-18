@@ -62,6 +62,10 @@ An elementary one-liner that compiles Rmd files into HTML.
 
 Removes obsolete RAW image files, i.e. such whose companion JPGs have been deleted.
 
+### [`screen_setup`](https://github.com/reitzig/scripts/blob/master/screen_setup)
+
+Provides a narrow interface to xrandr that allows you to switch easily between single, dual, and mirror screen setups. Tries to avoid some pitfalls like enabled but disconnected displays.
+
 ### [`showqr`](https://github.com/reitzig/scripts/blob/master/showqr)
 
 Renders and displays text as qr-code.
