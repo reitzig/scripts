@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with pdfinvert. If not, see <http://www.gnu.org/licenses/>.
 
-# Inverts colors in a PDF, including embedded images. Can use replacement 
+# Inverts colors in a PDF, including embedded images. Can use replacement
 # tables instead of inverting all colors. Can transform all embedded images
 # or use rules to determine which remain unchanged. Can add page numbers (`-pn`).
 #
@@ -41,13 +41,13 @@
 #
 # Image rule files have one line per page. Every line contains whitespace-separated
 # zeros and ones; if the i-th digit is zero, the i-th embedded image on that
-# page is not converted, otherwise it is. Illegal entries and missing numbers are 
+# page is not converted, otherwise it is. Illegal entries and missing numbers are
 # considered to be one.
 #
 # For example, the file
 #
 #   1 0 0
-#   
+#
 #   1 1 0
 #
 # means that images two and three on page one as well as image three on page three
@@ -71,13 +71,13 @@ require 'fileutils'
 
 $DEBUG = false
 
-# # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # #
 # Init
-# # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # #
 
 if ( ARGV.size == 0 )
   puts "Usage: pdfinvert [-pn] [-c <color file>] [-i <image rule file>] [-it \"<color>\"] <input file> [output file]"
-  Process.exit
+  Process.exit 1
 end
 
 $pagenumbers = false
@@ -93,7 +93,7 @@ skip = 0
     skip -= 1
     next
   end
-  
+
   if ( ARGV[i] == "-pn" )
     $pagenumbers = true
   elsif ( ARGV[i] == "-c" )
@@ -117,10 +117,10 @@ skip = 0
 # Verify that input file exists
 if ( $input == "" )
   puts "Please provide an input file."
-  Process.exit
+  Process.exit 1
 elsif ( !File.exists?($input) )
   puts "File '#{$input}' does not exist.";
-  Process.exit;
+  Process.exit 1;
 end
 
 $tmp = "/tmp/pdfinvert_#{$filename}"
@@ -146,7 +146,7 @@ if ( $colors != "" )
         entry[2] = entry[2][1..6]
         $colorrules[entry[1]] = [entry[0], entry[2]]
         $colororder.push(entry[1])
-      }    
+      }
     }
   else
     puts "Color specification file '#{$colors}' does not exist. Inverting now."
@@ -175,7 +175,7 @@ if ( $images != "" )
       f.readlines.each { |line|
         $imagerules[ctr] = line.strip.split(/\s+/).map { |b| Integer(b) rescue 1 }
         ctr += 1
-      }    
+      }
     }
   else
     puts "Image rule file '#{$images}' does not exist. Converting all images now."
@@ -192,8 +192,8 @@ def convertimage?(page, image)
 end
 
 # Function that returns page number inset for SVG
-def pagenumber(nr, x, y) 
-  return "  <g id=\"pagenumberg\">\n" + 
+def pagenumber(nr, x, y)
+  return "  <g id=\"pagenumberg\">\n" +
          "    <text xml:space=\"preserve\" style=\"font-size:25px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#888888;fill-opacity:1;stroke:none;font-family:Sans;\" " +
              "x=\"#{x}\" y=\"#{y}\" id=\"pagenumbert\" >\n" +
          "      <tspan  id=\"pagenumberts\" x=\"#{x}\" y=\"#{y}\" style=\"font-weight:1;font-style:normal;font-stretch:normal;font-variant:normal;font-size:25px;font-family:Sans;\">\n" +
@@ -204,16 +204,17 @@ def pagenumber(nr, x, y)
 end
 
 # This function processes the given file
-def invert(file) 
+def invert(file)
   log = "Inverting #{file}...\n"
   basename = File.basename(file, ".pdf")
-  
-  p = IO::popen("inkscape -l #{basename}.svg #{file} 2>&1")
-  log += p.readlines.join
+
+  IO::popen("inkscape -l #{basename}.svg #{file} 2>&1") do |io|
+    log += io.readlines.join
+  end
   FileUtils.rm(file) if !$DEBUG
 
-  if $? != 0
-    log += "Conversion to SVG failed"
+  unless $?.success?
+    log += "Conversion to SVG failed\n"
     return log
   end
 
@@ -222,74 +223,79 @@ def invert(file)
   #  > ${1%.pdf}a4.svg;
   #mv ${1%.pdf}a4.svg ${1%.pdf}.svg;
   # This does not rescale/fit!
-  
+
   svg = []
   File.open("#{basename}.svg", "r") { |f|
     svg = f.readlines
   }
   FileUtils.rm("#{basename}.svg") if !$DEBUG
-  
+
   pnr = file.gsub(/[^0-9]/, "").to_i
   pny = nil
   pnx = nil
   imgctr = -1
   svg.map! { |line|
     # Replace colors of SVG elements as specified
-    line.gsub!(/#([0-9a-f]{6})/) { |match|      
+    line.gsub!(/#([0-9a-f]{6})/) { |match|
       "##{replacecolor($~[1])}"
     }
-    
+
     # Replace colors in binary images as specified
     line.gsub!(/"data:image\/(\w+?);base64,(.*)"/) { |match|
       imgctr += 1
-      
+
       imgtype = $~[1]
       imgname = "#{basename}_#{imgctr}"
       File.open("#{basename}_#{imgctr}.b64", "w") { |f| f.write($~[2]) }
-      
+
       # Convert base 64 string to image
-      p = IO::popen("base64 -d #{imgname}.b64 > #{imgname}.#{imgtype} 2>&1")
-      log += p.readlines.join
-      
+      IO::popen("base64 -d #{imgname}.b64 > #{imgname}.#{imgtype} 2>&1") do |io|
+        log += io.readlines.join
+      end
+
       # Remove border
       if ( $trimcolor != "" )
-        p = IO::popen("convert #{imgname}.#{imgtype} -bordercolor \"##{$trimcolor}\" " +
-                              "-border 1 -fill none -draw 'color 0,0 floodfill' -shave 1x1 +repage " +
-                              "#{imgname}.#{imgtype} 2>&1")
-        log += p.readlines.join
+        IO::popen("convert #{imgname}.#{imgtype} -bordercolor \"##{$trimcolor}\" " +
+                          "-border 1 -fill none -draw 'color 0,0 floodfill' -shave 1x1 +repage " +
+                          "#{imgname}.#{imgtype} 2>&1") do |io|
+            log += io.readlines.join
+        end
       end
-        
+
       # Invert/replace colors
       if ( convertimage?(pnr, imgctr) )
         if ( $colors == "" )
-          p = IO::popen("convert #{imgname}.#{imgtype} -negate #{imgname}.#{imgtype} 2>&1")
-          log += p.readlines.join
+          IO::popen("convert #{imgname}.#{imgtype} -negate #{imgname}.#{imgtype} 2>&1") do |io|
+            log += io.readlines.join
+          end
         else
           $colororder.each { |color|
             fuzz = $colorrules[color][0]
-            p = IO::popen("convert #{imgname}.#{imgtype} -fuzz #{fuzz}% " + 
-                            "-fill \"##{replacecolor(color)}\" -opaque \"##{color}\" " + 
-                            "#{imgname}.#{imgtype} 2>&1")
-            log += p.readlines.join
+            IO::popen("convert #{imgname}.#{imgtype} -fuzz #{fuzz}% " +
+                        "-fill \"##{replacecolor(color)}\" -opaque \"##{color}\" " +
+                        "#{imgname}.#{imgtype} 2>&1") do |io|
+                log += io.readlines.join
+            end
           }
         end
       end
-        
+
       # Convert back to base 64
-      p = IO::popen("base64 #{imgname}.#{imgtype} > #{imgname}.b64 2>&1")
-      log += p.readlines.join
-      
+      IO::popen("base64 #{imgname}.#{imgtype} > #{imgname}.b64 2>&1") do |io|
+        log += io.readlines.join
+      end
+
       result = "\"data:image/#{imgtype};base64,#{File.open("#{imgname}.b64", "r") { |f| result = f.readlines.join}}\""
-      
+
       # Cleanup
       FileUtils.rm("#{imgname}.b64") if !$DEBUG
       FileUtils.rm("#{imgname}.#{imgtype}") if !$DEBUG
-      
+
       result
     }
-  
+
     # Add page number (if requested)
-    if ( $pagenumbers )    
+    if ( $pagenumbers )
       # Find out (--> page number position) and change document height.
       # Need room for page number! No worry, we resize later, anyway.
       if ( pny == nil )
@@ -299,39 +305,41 @@ def invert(file)
           "height=\"#{newheight}\""
         }
       end
-      
+
       # Find out document width (--> page number position)
       if ( pnx == nil && /width="(\d+)"/ =~ line.strip )
         pnx = (Integer($~[1]) / 2).to_s
       end
-      
+
       line.gsub!("</svg>", "\n#{pagenumber(pnr, pnx, pny)}\n</svg>")
     end
     line
   }
-  
+
   File.open("#{basename}_inv.svg", "w") { |f|
     f.write(svg.join)
   }
-  
+
   outbasename = sprintf("output_%04d", pnr)
-  p = IO::popen("inkscape -A #{outbasename}.pdf #{basename}_inv.svg 2>&1")
-  log += p.readlines.join
+  IO::popen("inkscape -A #{outbasename}.pdf #{basename}_inv.svg 2>&1") do |io|
+    log += io.readlines.join
+  end
   FileUtils.rm("#{basename}_inv.svg") if !$DEBUG
-  
+
   # Change PDF size to A4. Nasty workaround.
-  p = IO::popen("gs -sOutputFile=#{outbasename}a4.pdf -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sPAPERSIZE=a4 " +
-                   "-dFIXEDMEDIA -dPDFFitPage -q -f #{outbasename}.pdf 2>&1")
-  log += p.readlines.join
+  IO::popen("gs -sOutputFile=#{outbasename}a4.pdf -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sPAPERSIZE=a4 " +
+               "-dFIXEDMEDIA -dPDFFitPage -q -f #{outbasename}.pdf 2>&1") do |io|
+      log += io.readlines.join
+  end
   FileUtils.mv("#{outbasename}a4.pdf", "#{outbasename}.pdf")
 
   log += "Done inverting #{file}.\n";
   return log
 end
 
-# # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # #
 # Actual Work
-# # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # #
 
 FileUtils.cp($input, $tmp)
 Dir.chdir($tmp)
@@ -339,8 +347,9 @@ $input = File.basename($input)
 
 $log = ""
 
-p = IO::popen("pdftk #{$input} burst output #{$tmp}/input_%04d.pdf 2>&1")
-$log += p.readlines.join
+IO::popen("pdftk #{$input} burst output #{$tmp}/input_%04d.pdf 2>&1") do |io|
+    $log += io.readlines.join
+end
 FileUtils.rm($input) if !$DEBUG
 FileUtils.rm("doc_data.txt") if !$DEBUG # Created by pdftk
 
@@ -348,7 +357,7 @@ FileUtils.rm("doc_data.txt") if !$DEBUG # Created by pdftk
 begin
   gem "parallel"
   require 'parallel'
-  
+
   $log += Parallel.map(Dir["input_*"]) { |f|
     invert(f)
   }.join("\n")
@@ -360,19 +369,24 @@ rescue Gem::LoadError
   }
 end
 
-# Join pages together again
-p = IO::popen("pdftk output*.pdf cat output output.pdf allow AllFeatures 2>&1")
-$log += p.readlines.join
-Dir["output_*"].each { |f| FileUtils.rm(f) }
+if Dir["output*.pdf"].empty?
+    $log += "No inverted pages found. Aborting.\n"
+else
+    # Join pages together again
+    IO::popen("pdftk output*.pdf cat output output.pdf allow AllFeatures 2>&1") do |io|
+        $log += io.readlines.join
+    end
+    Dir["output_*"].each { |f| FileUtils.rm(f) }
+end
 
 # Write log (for debugging)
 File.open("log", "w") { |f|
   f.write($log)
 } if $DEBUG
 
-# # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # #
 # Wrap-up
-# # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # #
 
 Dir.chdir($dir)
 if File.exist?("#{$tmp}/output.pdf")
@@ -383,6 +397,6 @@ if File.exist?("#{$tmp}/output.pdf")
 else
     FileUtils.rmdir($tmp) if !$DEBUG
     puts "Error. No final PDF produced."
-    exit 1
+    Process.exit 1
 end
 
