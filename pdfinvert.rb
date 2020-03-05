@@ -212,6 +212,11 @@ def invert(file)
   log += p.readlines.join
   FileUtils.rm(file) if !$DEBUG
 
+  if $? != 0
+    log += "Conversion to SVG failed"
+    return log
+  end
+
   # Change size form US Letter to A4 (may want to generalise?):
   #sed -e 's/width="765"/width="210mm"/;s/height="990"/height="297mm"/' ${1%.pdf}.svg \
   #  > ${1%.pdf}a4.svg;
@@ -370,8 +375,14 @@ File.open("log", "w") { |f|
 # # # # # # # # # # # # # # # 
 
 Dir.chdir($dir)
-FileUtils.cp("#{$tmp}/output.pdf", $output)
-FileUtils.rm("#{$tmp}/output.pdf") if !$DEBUG
-FileUtils.rmdir($tmp) if !$DEBUG
+if File.exist?("#{$tmp}/output.pdf")
+    FileUtils.cp("#{$tmp}/output.pdf", $output)
+    FileUtils.rm("#{$tmp}/output.pdf") if !$DEBUG
+    FileUtils.rmdir($tmp) if !$DEBUG
+    puts "Done. Find debug information in #{$tmp}" if $DEBUG
+else
+    FileUtils.rmdir($tmp) if !$DEBUG
+    puts "Error. No final PDF produced."
+    exit 1
+end
 
-puts "Done. Find debug information in #{$tmp}" if $DEBUG
