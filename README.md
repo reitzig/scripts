@@ -105,3 +105,7 @@ Wraps `omxplayer` to avoid a couple of usability issues, e.g.
  * hides shell background during video playback,
  * supports playlists and
  * supports (recursive) playback of multiple files and directories.
+
+### [`xdg-mime-which`](https://github.com/reitzig/scripts/blob/master/xdg-mime-which.sh)
+
+Determines in which file the XDG default application for the given MIME type is set.
