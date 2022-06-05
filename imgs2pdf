@@ -24,8 +24,8 @@
 # To Do: options for landscape/best-fit-rotation, multiple images per page.
 
 
-script=`basename $0`;
-target="`basename "$(pwd)"`";
+script="$(basename "$0")";
+target="$(basename $(realpath "$(pwd)"))";
 
 echo -n "[${script}] Creating LaTeX...";
 echo "\documentclass{article}\usepackage[utf8]{inputenc}\usepackage{graphicx,adjustbox}\usepackage[a4paper,margin=1.5cm]{geometry}\pagestyle{empty}\begin{document}" > "${target}.tex";
