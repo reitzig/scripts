@@ -60,7 +60,7 @@ all_formats = ["flac", "ogg", "mp3"] # Ordered decreasingly by quality/preferenc
 conversions = {
   "ogg->mp3"  => '"ffmpeg -v quiet -y -i \"#{infile}\" -qscale:a 6 -map_metadata 0:s:0 \"#{outfile}\""',
   "flac->mp3" => '"ffmpeg -v quiet -y -i \"#{infile}\" -qscale:a 6 -map_metadata 0:g:0 \"#{outfile}\""',
-  "flac->ogg" => '"ffmpeg -v quiet -y -i \"#{infile}\" -codec:a libvorbis -qscale:a 6 -map_metadata 0 \"#{outfile}\""'
+  "flac->ogg" => '"ffmpeg -v quiet -y -i \"#{infile}\" -vn -codec:a libvorbis -qscale:a 6 -map_metadata 0 \"#{outfile}\""'
 }
 # We only convert to the best allowed format and (hopefully) never up,
 # so other directions are not necessary.
