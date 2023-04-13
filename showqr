@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2015--2018 Raphael Reitzig
+# Copyright 2015--2023 Raphael Reitzig
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,25 +15,29 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-# Requires: qrencode, display
+# Requires: qrencode, display, xsel
 #           For tiling workaround under i3, also: wmctrl, awk
 
 # Shows text found as CLI parameters as a QR-code.
-# If no parameters are given, reads from STDIN.
+# Pass `-` to read from STDIN.
+# If no parameters are given, reads from clipboard.
 
+set -eu
 set -o pipefail
 
 f=`mktemp --suff=.png`;
 
-# Convert STDIN resp. first parameter 
+# Convert clipboarde, STDIN resp. first parameter 
 if [ $# -eq 0 ]; then
-  qrencode -o ${f} < /dev/stdin
+  qrencode -o "${f}" "$(xsel -b)"
+elif [ "${1}" == "-" ]; then
+  qrencode -o "${f}" < /dev/stdin
 else
-  qrencode -o ${f} "$*";
+  qrencode -o "${f}" "$*";
 fi
 
 # Open the QR code for viewing
-display ${f} & 
+display -size "1000>x1000>" "${f}" & 
 pid="$!"
 
 # If i3 is active, trickery to get a floating viewer 
@@ -44,7 +48,7 @@ if wmctrl -m | grep "Name: i3" > /dev/null; then
   # Can't search for the PID (display doesn't tell it to wmctrl).
   # Turns out the window name is
   #
-  #     ImageMagick: tmp.tmp.XXXX.png
+  #     ImageMagick: tmp.XXXX.png
   #
   # so we can use that to search for the window ID.
   # We use only the filename which ends up in its own column in awk.
