@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "ℹ️ Maintaining user-space tools with aqua as per ${AQUA_GLOBAL_CONFIG}"
+
+echo -e "\n⏬ Updating dotfiles ..."
+chezmoi update --apply=false
+chezmoi apply "${AQUA_GLOBAL_CONFIG}"
+echo -e "✅ Done"
+
+export AQUA_LOG_COLOR=auto
+export AQUA_LOG_LEVEL=warn
+export AQUA_PROGRESS_BAR=true
+
+echo -e "\n⏬ Updating aqua ..."
+aqua upa
+echo -e "✅ Done"
+
+echo -e "\n⏬ Updating tools ..."
+aqua install -a
+echo -e "✅ Done"
+
+
+echo -e "\n⏬ Updating shell completions ..."
+completion_dir="$HOME/.config/fish/completions"
+# TODO: deduplicate
+aqua completion fish > "${completion_dir}/aqua.fish"
+changie completion fish > "${completion_dir}/changie.fish"
+chezmoi completion fish > "${completion_dir}/chezmoi.fish"
+cog generate-completions fish > "${completion_dir}/cog.fish"
+delta --generate-completion fish > "${completion_dir}/delta.fish"
+golangci-lint completion fish > "${completion_dir}/golangci-lint.fish"
+goreleaser completion fish > "${completion_dir}/goreleaser.fish"
+helm completion fish > "${completion_dir}/helm.fish"
+hugo completion fish > "${completion_dir}/hugo.fish"
+k9s completion fish > "${completion_dir}/k9s.fish"
+lefthook completion fish > "${completion_dir}/lefthook.fish"
+# mise completion fish > "${completion_dir}/mise.fish"
+minikube completion fish > "${completion_dir}/minikube.fish"
+yq shell-completion fish > "${completion_dir}/yq.fish"
+echo -e "✅ Done"
