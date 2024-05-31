@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+
+set -u
+
+summary="$(mktemp)"
+download_dir="${HOME}/Downloads"
+install_dir="${HOME}/software"
+binary_dir="${HOME}/.local/bin"
+completion_dir="$HOME/.config/fish/completions"
+
+extract_version() {
+    echo "${1}" | awk "{ print \$${2:-0}}"
+}
+
+log() {
+    tool="${1}"
+    version="${2}"
+    field="${3:-0}"
+
+    version="$(extract_version "${version}" "${field}")"
+
+    echo -e "${tool}\t${version}"
+}
+
+logsummary() {
+    tool="${1}"
+    version="${2}"
+    field="${3:-0}"
+
+    version="$(extract_version "${version}" "${field}")"
+
+    log "${tool}" "${version}"
+    echo -e "${tool}\t${version}" >> "${summary}"
+}
+
+binfile() {
+    alias="${1}"
+
+    which "${alias}" \
+        | xargs realpath \
+        | xargs basename
+}
+
+echo -e "# # # # # #\n\n# # # # # # op"
+log op "$(op --version)" 1
+if stat -t "${download_dir}"/op_linux_amd64_v*.zip >/dev/null 2>&1; then
+    # As per https://developer.1password.com/docs/cli/get-started/#install
+    unzip -d "${binary_dir}" "${download_dir}"/op_linux_amd64_v*.zip op \
+    &&  rm "${download_dir}"/op_linux_amd64_v*.zip \
+    &&  sudo chgrp onepassword-cli "${binary_dir}"/op \
+    &&  sudo chown root "${binary_dir}"/op \
+    &&  sudo chmod g+s "${binary_dir}"/op \
+    &&  op completion fish > "${completion_dir}/op.fish" \
+    &&  logsummary op "$(op --version)" 1
+else
+    echo "No upgrade"
+fi
+
+echo -e "# # # # # #\n\n# # # # # # AppImage"
+shopt -s nullglob
+for f in "${download_dir}"/*.AppImage; do
+    source_file="$(basename "${f}")"
+    target_file="${install_dir}/${source_file}"
+    target_link="$(echo "${source_file}" | sed -e 's/[-_].*//' -e 's/.*/\L&/')"
+    old_bin="$(binfile "${target_link}")"
+
+    if [[ "${source_file}" == "${old_bin}" ]]; then
+        log "${target_link}" "${old_bin} already installed"
+        rm "${f}"
+        continue
+    fi
+
+    log "${target_link}" "${old_bin}"
+    mv "${download_dir}/${source_file}" "${target_file}" \
+    &&  chmod +x "${target_file}" \
+    &&  ln -sf "$(realpath "${target_file}")" "${binary_dir}/${target_link}" \
+    &&  rm "${install_dir}/${old_bin}" \
+    &&  logsummary "${target_link}" "$(binfile "${target_link}")"
+done
+shopt -u nullglob
+
+if which dpkg > /dev/null 2>&1; then
+    echo -e "# # # # # #\n\n# # # # # # Debian Packages"
+    shopt -s nullglob
+    for d in "${download_dir}"/*.deb; do
+        package="$(dpkg --info "${d}" | grep Package | awk '{ print $2 }')"
+        new_version="$(dpkg --info "${d}" | grep Version | awk '{ print $2 }')"
+        old_version="$(apt show "${package}" 2> /dev/null | grep Version | awk '{ print $2 }')"
+        log "${package}" "${old_version}"
+        sudo dpkg -i "${d}" \
+            && rm "${d}" \
+            && logsummary "${package}" "${new_version}"
+    done
+    shopt -u nullglob
+fi
+
+if which pacman > /dev/null 2>&1; then
+    echo -e "# # # # # #\n\n# # # # # # Arch Packages"
+    shopt -s nullglob
+    for f in "${download_dir}"/*.pkg.tar.xz; do
+        source_file="$(basename "${f}")"
+        package="$(echo "${source_file}" | sed -e 's/[-_].*//')"
+
+        log "${package}" "$(pacman -Q "${package}")" 2
+        sudo pacman -U "${f}" \
+        && rm "${f}" \
+        && logsummary "${package}" "$(pacman -Q "${package}")" 2
+    done
+    shopt -u nullglob
+fi
+
+echo -e "# # # # # #\n\n# # # # # # Summary"
+if (( $(wc -l < "${summary}") > 0 )); then
+    cat "${summary}"
+else
+    echo "No upgrades"
+fi

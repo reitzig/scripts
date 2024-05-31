@@ -156,6 +156,11 @@ Converts TikZ images specified in their own file to SVG.
 
 Transposes a regular LaTeX `tabular` table.
 
+### [`upgrade-from-downloads`](https://github.com/reitzig/scripts/blob/master/upgrade-from-downloads)
+
+Failing all other ways to install software, _sometimes_ it comes down to downloading a file.
+This scripts handles some types of packaging in a convenient way.
+
 ### [`watch`](https://github.com/reitzig/scripts/blob/master/watch)
 
 Wraps `omxplayer` to avoid a couple of usability issues, e.g.
