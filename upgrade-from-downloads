@@ -45,7 +45,7 @@ logsummary() {
 echo -e "# # # # # #\n\n# # # # # # borg"
 log borg "$(borg --version)" 2
 if [ -e Downloads/borg-linux64 ]; then
-       mv Downloads/borg-linux64 bin/borg && chmod +x bin/borg \
+       mv Downloads/borg-linux64 .local/bin/borg && chmod +x .local/bin/borg \
     && logsummary borg "$(borg --version)" 2
 else
     echo "No upgrade"
@@ -123,7 +123,7 @@ fi
 echo -e "# # # # # #\n\n# # # # # # slides"
 if stat -t Downloads/slides_*_linux_amd64.tar.gz >/dev/null 2>&1; then
        tar -xzf Downloads/slides_*_linux_amd64.tar.gz slides \
-    && mv slides bin/ && chmod +x bin/slides \
+    && mv slides .local/bin/ && chmod +x .local/bin/slides \
     && rm Downloads/slides_*_linux_amd64.tar.gz \
     && logsummary slides 'upgraded (no version available)'
 else
@@ -188,15 +188,15 @@ fi
 #     echo "No upgrade"
 # fi
 
-# echo -e "# # # # # #\n\n# # # # # # mise"
-# log mise "$(mise --version)" 1
-# if stat -t Downloads/mise-*-linux-x64 >/dev/null 2>&1; then
-#        mv Downloads/mise-*-linux-x64 bin/mise && chmod +x bin/mise \
-#     && logsummary mise "$(mise --version)" 1
-#     # TODO: completions
-# else
-#     echo "No upgrade"
-# fi
+echo -e "# # # # # #\n\n# # # # # # mise"
+log mise "$(mise --version)" 1
+if stat -t Downloads/mise-*-linux-x64 >/dev/null 2>&1; then
+       mv Downloads/mise-*-linux-x64 .local/bin/mise && chmod +x /.local/bin/mise \
+    && mise completion fish > "${completion_dir}/mise.fish" \
+    && logsummary mise "$(mise --version)" 1
+else
+    echo "No upgrade"
+fi
 
 # echo -e "# # # # # #\n\n# # # # # # chezmoi"
 # log chezmoi "$(chezmoi --version)" 3
@@ -236,17 +236,17 @@ fi
 # fi
 
 # TODO: Does it have to be global? Install via aqua?
-echo -e "# # # # # #\n\n# # # # # # starship"
-log starship "$(starship -V)" 2
-if [ -e Downloads/starship-x86_64-unknown-linux-gnu.tar.gz ]; then
-       tar -xzf Downloads/starship-x86_64-unknown-linux-gnu.tar.gz starship \
-    && sudo mv starship /usr/local/bin/starship && sudo chmod +x /usr/local/bin/starship \
-    && rm Downloads/starship-x86_64-unknown-linux-gnu.tar.gz \
-    && starship completions fish > "${completion_dir}/starship.fish" \
-    && logsummary starship "$(starship -V)" 2
-else
-    echo "No upgrade"
-fi
+#echo -e "# # # # # #\n\n# # # # # # starship"
+#log starship "$(starship -V)" 2
+#if [ -e Downloads/starship-x86_64-unknown-linux-gnu.tar.gz ]; then
+#       tar -xzf Downloads/starship-x86_64-unknown-linux-gnu.tar.gz starship \
+#    && sudo mv starship /usr/local/bin/starship && sudo chmod +x /usr/local/bin/starship \
+#    && rm Downloads/starship-x86_64-unknown-linux-gnu.tar.gz \
+#    && starship completions fish > "${completion_dir}/starship.fish" \
+#    && logsummary starship "$(starship -V)" 2
+#else
+#    echo "No upgrade"
+#fi
 
 # echo -e "# # # # # #\n\n# # # # # # golangci-lint"
 # log golangci-lint "$(golangci-lint --version)" 4
