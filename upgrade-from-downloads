@@ -45,7 +45,7 @@ logsummary() {
 echo -e "# # # # # #\n\n# # # # # # borg"
 log borg "$(borg --version)" 2
 if [ -e Downloads/borg-linux64 ]; then
-       mv Downloads/borg-linux64 .local/bin/borg && chmod +x .local/bin/borg \
+       mv Downloads/borg-linux64 bin/borg && chmod +x bin/borg \
     && logsummary borg "$(borg --version)" 2
 else
     echo "No upgrade"
@@ -235,18 +235,17 @@ fi
 #     echo "No upgrade"
 # fi
 
-# TODO: Does it have to be global? Install via aqua?
-#echo -e "# # # # # #\n\n# # # # # # starship"
-#log starship "$(starship -V)" 2
-#if [ -e Downloads/starship-x86_64-unknown-linux-gnu.tar.gz ]; then
-#       tar -xzf Downloads/starship-x86_64-unknown-linux-gnu.tar.gz starship \
-#    && sudo mv starship /usr/local/bin/starship && sudo chmod +x /usr/local/bin/starship \
-#    && rm Downloads/starship-x86_64-unknown-linux-gnu.tar.gz \
-#    && starship completions fish > "${completion_dir}/starship.fish" \
-#    && logsummary starship "$(starship -V)" 2
-#else
-#    echo "No upgrade"
-#fi
+# echo -e "# # # # # #\n\n# # # # # # starship"
+# log starship "$(starship -V)" 2
+# if [ -e Downloads/starship-x86_64-unknown-linux-gnu.tar.gz ]; then
+#        tar -xzf Downloads/starship-x86_64-unknown-linux-gnu.tar.gz starship \
+#     && sudo mv starship /usr/local/bin/starship && sudo chmod +x /usr/local/bin/starship \
+#     && rm Downloads/starship-x86_64-unknown-linux-gnu.tar.gz \
+#     && starship completions fish > "${completion_dir}/starship.fish" \
+#     && logsummary starship "$(starship -V)" 2
+# else
+#     echo "No upgrade"
+# fi
 
 # echo -e "# # # # # #\n\n# # # # # # golangci-lint"
 # log golangci-lint "$(golangci-lint --version)" 4
