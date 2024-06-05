@@ -308,6 +308,17 @@ fi
 #     echo "No upgrade"
 # fi
 
+echo -e "# # # # # #\n\n# # # # # # jetbrains-toolbox"
+log jetbrains-toolbox "$(jetbrains-toolbox --version)" 2
+if stat -t Downloads/jetbrains-toolbox-*.tar.gz >/dev/null 2>&1; then
+       tar --strip-components=1 --wildcards -xzf Downloads/jetbrains-toolbox-*.tar.gz jetbrains-toolbox-*/jetbrains-toolbox \
+    && mv jetbrains-toolbox .local/bin/ && chmod +x .local/bin/jetbrains-toolbox \
+    && rm Downloads/jetbrains-toolbox-*.tar.gz \
+    && logsummary jetbrains-toolbox "$(jetbrains-toolbox --version)" 2
+else
+    echo "No upgrade"
+fi
+
 echo -e "# # # # # #\n\n# # # # # # Debian Packages"
 shopt -s nullglob
 for d in Downloads/*.deb; do
