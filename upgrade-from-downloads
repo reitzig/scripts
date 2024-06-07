@@ -318,6 +318,17 @@ else
     echo "No upgrade"
 fi
 
+echo -e "# # # # # #\n\n# # # # # # espanso"
+log espanso "$(espanso --version)" 2
+if [ -e Downloads/Espanso-X11.AppImage ]; then
+        mv Downloads/Espanso-X11.AppImage software/ \
+    &&  chmod +x software/Espanso-X11.AppImage \
+    &&  ln -s "$(realpath software/Espanso-X11.AppImage)" .local/bin/espanso \
+    &&  logsummary espanso "$(espanso --version)" 2
+else
+    echo "No upgrade"
+fi
+
 echo -e "# # # # # #\n\n# # # # # # Debian Packages"
 shopt -s nullglob
 for d in Downloads/*.deb; do
