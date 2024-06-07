@@ -84,10 +84,10 @@ var batteryDevice string
 
 func CheckCharge() {
     if IsLinePowerOnline(lineDevice) {
-        logger.Print("AC connected")
+        // logger.Print("AC connected")
         return
     }
-    logger.Print("AC disconnected")
+    // logger.Print("AC disconnected")
     
     charge := GetChargingLevel(batteryDevice)
     logger.Printf("Battery at %d%%\n", charge)
