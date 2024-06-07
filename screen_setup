@@ -79,6 +79,10 @@ xrandr_command += (DISPLAYS - SELECTED_DISPLAYS).flat_map { |d|
 
 exec *xrandr_command
 
+# TODO: choose fitting variant of wallpaper
+# Single screen: 
+#`feh --bg-center Documents/Images/Wallpaper/cc_logo_3.png` & # send to bg?
+
 # TODO: Configure i3 (if present)
 
 # case mode
