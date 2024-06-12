@@ -3,6 +3,9 @@
 set -u
 
 summary="$(mktemp)"
+download_dir="${HOME}/Downloads"
+install_dir="${HOME}/software"
+binary_dir="${HOME}/.local/bin"
 completion_dir="$HOME/.config/fish/completions"
 
 extract_version() {
@@ -31,32 +34,31 @@ logsummary() {
 }
 
 
-# echo -e "# # # # # # yq"
+# echo -e "# # # # # #\n\n# # # # # # yq"
 # log yq "$(yq --version)" 4
-# if [ -e Downloads/yq_linux_amd64 ]; then
-#        mv Downloads/yq_linux_amd64 bin/yq && chmod +x bin/yq \
+# if [ -e "${download_dir}"/yq_linux_amd64 ]; then
+#        mv "${download_dir}"/yq_linux_amd64 "${binary_dir}"/yq && chmod +x "${binary_dir}"/yq \
 #     && yq shell-completion fish > "${completion_dir}/yq.fish" \
 #     && logsummary yq "$(yq --version)" 4
 # else
 #     echo "No upgrade"
 # fi
 
-# TODO: Contribute to aqua registry?
-echo -e "# # # # # #\n\n# # # # # # borg"
-log borg "$(borg --version)" 2
-if [ -e Downloads/borg-linux64 ]; then
-       mv Downloads/borg-linux64 bin/borg && chmod +x bin/borg \
-    && logsummary borg "$(borg --version)" 2
-else
-    echo "No upgrade"
-fi
+# echo -e "# # # # # #\n\n# # # # # # borg"
+# log borg "$(borg --version)" 2
+# if [ -e "${download_dir}"/borg-linux64 ]; then
+#        mv "${download_dir}"/borg-linux64 "${binary_dir}"/borg && chmod +x "${binary_dir}"/borg \
+#     && logsummary borg "$(borg --version)" 2
+# else
+#     echo "No upgrade"
+# fi
 
 # echo -e "# # # # # #\n\n# # # # # # helm"
 # log helm "$(helm version --short)"
-# if stat -t Downloads/helm-v*-linux-amd64.tar.gz >/dev/null 2>&1; then
-#        tar --strip-components=1 -xzf Downloads/helm-v*-linux-amd64.tar.gz linux-amd64/helm \
-#     && mv helm bin/ && chmod +x bin/helm \
-#     && rm Downloads/helm-v*-linux-amd64.tar.gz \
+# if stat -t "${download_dir}"/helm-v*-linux-amd64.tar.gz >/dev/null 2>&1; then
+#        tar --strip-components=1 -xzf "${download_dir}"/helm-v*-linux-amd64.tar.gz linux-amd64/helm \
+#     && mv helm "${binary_dir}"/ && chmod +x "${binary_dir}"/helm \
+#     && rm "${download_dir}"/helm-v*-linux-amd64.tar.gz \
 #     && helm completion fish > "${completion_dir}/helm.fish" \
 #     && logsummary helm "$(helm version --short)"
 # else
@@ -65,10 +67,10 @@ fi
 
 # echo -e "# # # # # #\n\n# # # # # # k9s"
 # log k9s "$(k9s version --short | head -n1)" 2
-# if [ -e Downloads/k9s_Linux_amd64.tar.gz ]; then
-#        tar -xzf Downloads/k9s_Linux_amd64.tar.gz k9s \
-#     && mv k9s bin/ && chmod +x bin/k9s \
-#     && rm Downloads/k9s_Linux_amd64.tar.gz \
+# if [ -e "${download_dir}"/k9s_Linux_amd64.tar.gz ]; then
+#        tar -xzf "${download_dir}"/k9s_Linux_amd64.tar.gz k9s \
+#     && mv k9s "${binary_dir}"/ && chmod +x "${binary_dir}"/k9s \
+#     && rm "${download_dir}"/k9s_Linux_amd64.tar.gz \
 #     && k9s completion fish > "${completion_dir}/k9s.fish" \
 #     && logsummary k9s "$(k9s version --short | head -n1)" 2
 # else
@@ -78,8 +80,8 @@ fi
 
 #echo -e "# # # # # #\n\n# # # # # # k3d"
 #log k3d "$(k3d --version)"
-#if [ -e Downloads/k3d-linux-amd64 ]; then
-#       mv Downloads/k3d-linux-amd64 bin/k3d && chmod +x bin/k3d \
+#if [ -e "${download_dir}"/k3d-linux-amd64 ]; then
+#       mv "${download_dir}"/k3d-linux-amd64 "${binary_dir}"/k3d && chmod +x "${binary_dir}"/k3d \
 #    && logsummary k3d "$(k3d --version)"
 #else
 #    echo "No upgrade"
@@ -87,10 +89,10 @@ fi
 
 # echo -e "# # # # # #\n\n# # # # # # popeye"
 # log popeye "$(popeye version | grep Version)" 2
-# if [ -e Downloads/popeye_linux_amd64.tar.gz ]; then
-#        tar -xzf Downloads/popeye_linux_amd64.tar.gz popeye \
-#     && mv popeye bin/ && chmod +x bin/popeye \
-#     && rm Downloads/popeye_linux_amd64.tar.gz \
+# if [ -e "${download_dir}"/popeye_linux_amd64.tar.gz ]; then
+#        tar -xzf "${download_dir}"/popeye_linux_amd64.tar.gz popeye \
+#     && mv popeye "${binary_dir}"/ && chmod +x "${binary_dir}"/popeye \
+#     && rm "${download_dir}"/popeye_linux_amd64.tar.gz \
 #     && popeye completion fish > "${completion_dir}/popeye.fish" \
 #     && logsummary popeye "$(popeye version | grep Version)" 2
 # else
@@ -99,10 +101,10 @@ fi
 
 # echo -e "# # # # # #\n\n# # # # # # dive"
 # log dive "$(dive version)" 2
-# if stat -t Downloads/dive_*_linux_amd64.tar.gz >/dev/null 2>&1; then
-#        tar -xzf Downloads/dive*_linux_amd64.tar.gz dive \
-#     && mv dive bin/ && chmod +x bin/dive \
-#     && rm Downloads/dive_*_linux_amd64.tar.gz \
+# if stat -t "${download_dir}"/dive_*_linux_amd64.tar.gz >/dev/null 2>&1; then
+#        tar -xzf "${download_dir}"/dive*_linux_amd64.tar.gz dive \
+#     && mv dive "${binary_dir}"/ && chmod +x "${binary_dir}"/dive \
+#     && rm "${download_dir}"/dive_*_linux_amd64.tar.gz \
 #     && logsummary dive "$(dive version)" 2
 # else
 #     echo "No upgrade"
@@ -110,32 +112,22 @@ fi
 
 # echo -e "# # # # # #\n\n# # # # # # goreleaser"
 # log goreleaser "$(goreleaser --version | grep GitVersion)" 2
-# if [ -e Downloads/goreleaser_Linux_x86_64.tar.gz ]; then
-#        tar -xzf Downloads/goreleaser_Linux_x86_64.tar.gz goreleaser \
-#     && mv goreleaser bin/ && chmod +x bin/goreleaser \
-#     && rm Downloads/goreleaser_Linux_x86_64.tar.gz \
+# if [ -e "${download_dir}"/goreleaser_Linux_x86_64.tar.gz ]; then
+#        tar -xzf "${download_dir}"/goreleaser_Linux_x86_64.tar.gz goreleaser \
+#     && mv goreleaser "${binary_dir}"/ && chmod +x "${binary_dir}"/goreleaser \
+#     && rm "${download_dir}"/goreleaser_Linux_x86_64.tar.gz \
 #     && goreleaser completion fish > "${completion_dir}/goreleaser.fish" \
 #     && logsummary goreleaser "$(goreleaser --version | grep GitVersion)" 2
 # else
 #     echo "No upgrade"
 # fi
 
-echo -e "# # # # # #\n\n# # # # # # slides"
-if stat -t Downloads/slides_*_linux_amd64.tar.gz >/dev/null 2>&1; then
-       tar -xzf Downloads/slides_*_linux_amd64.tar.gz slides \
-    && mv slides .local/bin/ && chmod +x .local/bin/slides \
-    && rm Downloads/slides_*_linux_amd64.tar.gz \
-    && logsummary slides 'upgraded (no version available)'
-else
-    echo "No upgrade"
-fi
-
 # echo -e "# # # # # #\n\n# # # # # # shellcheck"
 # log shellcheck "$(shellcheck -V | head -n2 | tail -n1)" 2
-# if stat -t Downloads/shellcheck-v*.linux.x86_64.tar.xz >/dev/null 2>&1; then
-#        tar --strip-components=1 --wildcards -xJf Downloads/shellcheck-v*.linux.x86_64.tar.xz shellcheck-v*/shellcheck \
-#     && mv shellcheck bin/ && chmod +x bin/shellcheck \
-#     && rm Downloads/shellcheck-v*.linux.x86_64.tar.xz \
+# if stat -t "${download_dir}"/shellcheck-v*.linux.x86_64.tar.xz >/dev/null 2>&1; then
+#        tar --strip-components=1 --wildcards -xJf "${download_dir}"/shellcheck-v*.linux.x86_64.tar.xz shellcheck-v*/shellcheck \
+#     && mv shellcheck "${binary_dir}"/ && chmod +x "${binary_dir}"/shellcheck \
+#     && rm "${download_dir}"/shellcheck-v*.linux.x86_64.tar.xz \
 #     && logsummary shellcheck "$(shellcheck -V | head -n2 | tail -n1)" 2
 # else
 #     echo "No upgrade"
@@ -143,8 +135,8 @@ fi
 
 # echo -e "# # # # # #\n\n# # # # # # lefthook"
 # log lefthook "$(lefthook version)"
-# if stat -t Downloads/lefthook_*_Linux_x86_64 >/dev/null 2>&1; then
-#        mv Downloads/lefthook_*_Linux_x86_64 bin/lefthook && chmod +x bin/lefthook \
+# if stat -t "${download_dir}"/lefthook_*_Linux_x86_64 >/dev/null 2>&1; then
+#        mv "${download_dir}"/lefthook_*_Linux_x86_64 "${binary_dir}"/lefthook && chmod +x "${binary_dir}"/lefthook \
 #     && lefthook completion fish > "${completion_dir}/lefthook.fish" \
 #     && logsummary lefthook "$(lefthook version)"
 # else
@@ -153,10 +145,10 @@ fi
 
 # echo -e "# # # # # #\n\n# # # # # # changie"
 # log changie "$(changie --version)" 3
-# if stat -t Downloads/changie_*_linux_amd64.tar.gz >/dev/null 2>&1; then
-#        tar -xzf Downloads/changie_*_linux_amd64.tar.gz changie \
-#     && mv changie bin/ && chmod +x bin/changie \
-#     && rm Downloads/changie_*_linux_amd64.tar.gz \
+# if stat -t "${download_dir}"/changie_*_linux_amd64.tar.gz >/dev/null 2>&1; then
+#        tar -xzf "${download_dir}"/changie_*_linux_amd64.tar.gz changie \
+#     && mv changie "${binary_dir}"/ && chmod +x "${binary_dir}"/changie \
+#     && rm "${download_dir}"/changie_*_linux_amd64.tar.gz \
 #     && changie completion fish > "${completion_dir}/changie.fish" \
 #     && logsummary changie "$(changie --version)" 3
 # else
@@ -165,11 +157,11 @@ fi
 
 # echo -e "# # # # # #\n\n# # # # # # cocogitto"
 # log cocogitto "$(cog --version)" 2
-# if stat -t Downloads/cocogitto-*-x86_64-unknown-linux-musl.tar.gz >/dev/null 2>&1; then
-#        tar --strip-components=1 -xzf Downloads/cocogitto-*-x86_64-unknown-linux-musl.tar.gz \
+# if stat -t "${download_dir}"/cocogitto-*-x86_64-unknown-linux-musl.tar.gz >/dev/null 2>&1; then
+#        tar --strip-components=1 -xzf "${download_dir}"/cocogitto-*-x86_64-unknown-linux-musl.tar.gz \
 #            x86_64-unknown-linux-musl/cog \
-#     && mv cog bin/ && chmod +x bin/cog \
-#     && rm Downloads/cocogitto-*-x86_64-unknown-linux-musl.tar.gz \
+#     && mv cog "${binary_dir}"/ && chmod +x "${binary_dir}"/cog \
+#     && rm "${download_dir}"/cocogitto-*-x86_64-unknown-linux-musl.tar.gz \
 #     && cog generate-completions fish > "${completion_dir}/cog.fish" \
 #     && logsummary cocogitto "$(cog --version)" 2
 # else
@@ -179,48 +171,29 @@ fi
 
 # echo -e "# # # # # #\n\n# # # # # # editorconfig-checker"
 # log ec "$(editorconfig-checker --version)"
-# if [ -e Downloads/ec-linux-amd64.tar.gz ]; then
-#        tar --strip-components=1 -xzf Downloads/ec-linux-amd64.tar.gz bin/ec-linux-amd64 \
-#     && mv ec-linux-amd64 bin/editorconfig-checker && chmod +x bin/editorconfig-checker \
-#     && rm Downloads/ec-linux-amd64.tar.gz \
+# if [ -e "${download_dir}"/ec-linux-amd64.tar.gz ]; then
+#        tar --strip-components=1 -xzf "${download_dir}"/ec-linux-amd64.tar.gz "${binary_dir}"/ec-linux-amd64 \
+#     && mv ec-linux-amd64 "${binary_dir}"/editorconfig-checker && chmod +x "${binary_dir}"/editorconfig-checker \
+#     && rm "${download_dir}"/ec-linux-amd64.tar.gz \
 #     && logsummary ec "$(editorconfig-checker --version)"
 # else
 #     echo "No upgrade"
 # fi
 
-echo -e "# # # # # #\n\n# # # # # # mise"
-log mise "$(mise --version)" 1
-if stat -t Downloads/mise-*-linux-x64 >/dev/null 2>&1; then
-       mv Downloads/mise-*-linux-x64 .local/bin/mise && chmod +x /.local/bin/mise \
-    && mise completion fish > "${completion_dir}/mise.fish" \
-    && logsummary mise "$(mise --version)" 1
-else
-    echo "No upgrade"
-fi
-
 # echo -e "# # # # # #\n\n# # # # # # chezmoi"
 # log chezmoi "$(chezmoi --version)" 3
-# if [ -e Downloads/chezmoi-linux-amd64 ]; then
-#        mv Downloads/chezmoi-linux-amd64 bin/chezmoi && chmod +x bin/chezmoi \
+# if [ -e "${download_dir}"/chezmoi-linux-amd64 ]; then
+#        mv "${download_dir}"/chezmoi-linux-amd64 "${binary_dir}"/chezmoi && chmod +x "${binary_dir}"/chezmoi \
 #     && chezmoi completion fish > "${completion_dir}/chezmoi.fish" \
 #     && logsummary chezmoi "$(chezmoi --version)" 3
 # else
 #     echo "No upgrade"
 # fi
 
-echo -e "# # # # # #\n\n# # # # # # pre-commit"
-log pre-commit "$(pre-commit --version)" 2
-if stat -t Downloads/pre-commit-*.pyz >/dev/null 2>&1; then
-        mv Downloads/pre-commit-*.pyz Software/pre-commit.pyz && chmod +x Software/pre-commit.pyz \
-    && logsummary pre-commit "$(pre-commit --version)" 2
-else
-    echo "No upgrade"
-fi
-
 #echo -e "# # # # # #\n\n# # # # # # container-structure-test"
 #container-structure-test version
-#if [ -e Downloads/container-structure-test-linux-amd64 ]; then
-#       mv Downloads/container-structure-test-linux-amd64 bin/container-structure-test && chmod +x bin/container-structure-test \
+#if [ -e "${download_dir}"/container-structure-test-linux-amd64 ]; then
+#       mv "${download_dir}"/container-structure-test-linux-amd64 "${binary_dir}"/container-structure-test && chmod +x "${binary_dir}"/container-structure-test \
 #    && container-structure-test version
 #else
 #    echo "No upgrade"
@@ -228,8 +201,8 @@ fi
 
 # echo -e "# # # # # #\n\n# # # # # # direnv"
 # log direnv "$(direnv --version)"
-# if [ -e Downloads/direnv.linux-amd64 ]; then
-#        sudo mv Downloads/direnv.linux-amd64 /usr/bin/direnv && sudo chmod +x /usr/bin/direnv \
+# if [ -e "${download_dir}"/direnv.linux-amd64 ]; then
+#        sudo mv "${download_dir}"/direnv.linux-amd64 /usr/bin/direnv && sudo chmod +x /usr/bin/direnv \
 #     && logsummary direnv "$(direnv --version)"
 # else
 #     echo "No upgrade"
@@ -237,10 +210,10 @@ fi
 
 # echo -e "# # # # # #\n\n# # # # # # starship"
 # log starship "$(starship -V)" 2
-# if [ -e Downloads/starship-x86_64-unknown-linux-gnu.tar.gz ]; then
-#        tar -xzf Downloads/starship-x86_64-unknown-linux-gnu.tar.gz starship \
+# if [ -e "${download_dir}"/starship-x86_64-unknown-linux-gnu.tar.gz ]; then
+#        tar -xzf "${download_dir}"/starship-x86_64-unknown-linux-gnu.tar.gz starship \
 #     && sudo mv starship /usr/local/bin/starship && sudo chmod +x /usr/local/bin/starship \
-#     && rm Downloads/starship-x86_64-unknown-linux-gnu.tar.gz \
+#     && rm "${download_dir}"/starship-x86_64-unknown-linux-gnu.tar.gz \
 #     && starship completions fish > "${completion_dir}/starship.fish" \
 #     && logsummary starship "$(starship -V)" 2
 # else
@@ -249,11 +222,11 @@ fi
 
 # echo -e "# # # # # #\n\n# # # # # # golangci-lint"
 # log golangci-lint "$(golangci-lint --version)" 4
-# if stat -t Downloads/golangci-lint-*-linux-amd64.tar.gz >/dev/null 2>&1; then
-#        tar --strip-components=1 --wildcards -xzf Downloads/golangci-lint-*-linux-amd64.tar.gz \
+# if stat -t "${download_dir}"/golangci-lint-*-linux-amd64.tar.gz >/dev/null 2>&1; then
+#        tar --strip-components=1 --wildcards -xzf "${download_dir}"/golangci-lint-*-linux-amd64.tar.gz \
 #            golangci-lint-*-linux-amd64/golangci-lint \
-#     && mv golangci-lint bin/ && chmod +x bin/golangci-lint \
-#     && rm Downloads/golangci-lint-*-linux-amd64.tar.gz \
+#     && mv golangci-lint "${binary_dir}"/ && chmod +x "${binary_dir}"/golangci-lint \
+#     && rm "${download_dir}"/golangci-lint-*-linux-amd64.tar.gz \
 #     && golangci-lint completion fish > "${completion_dir}/golangci-lint.fish" \
 #     && logsummary golangci-lint "$(golangci-lint --version)" 4
 # else
@@ -262,10 +235,10 @@ fi
 
 # echo -e "# # # # # #\n\n# # # # # # vale"
 # log vale "$(vale --version)" 3
-# if stat -t Downloads/vale_*_Linux_64-bit.tar.gz >/dev/null 2>&1; then
-#        tar -xzf Downloads/vale_*_Linux_64-bit.tar.gz vale \
-#     && mv vale bin/vale && chmod +x bin/vale \
-#     && rm Downloads/vale_*_Linux_64-bit.tar.gz \
+# if stat -t "${download_dir}"/vale_*_Linux_64-bit.tar.gz >/dev/null 2>&1; then
+#        tar -xzf "${download_dir}"/vale_*_Linux_64-bit.tar.gz vale \
+#     && mv vale "${binary_dir}"/vale && chmod +x "${binary_dir}"/vale \
+#     && rm "${download_dir}"/vale_*_Linux_64-bit.tar.gz \
 #     && logsummary vale "$(vale --version)" 3
 # else
 #     echo "No upgrade"
@@ -273,10 +246,10 @@ fi
 
 # echo -e "# # # # # #\n\n# # # # # # act"
 # log act "$(act --version)" 3
-# if [ -e Downloads/act_Linux_x86_64.tar.gz ]; then
-#        tar -xzf Downloads/act_Linux_x86_64.tar.gz act \
-#     && mv act bin/act && chmod +x bin/act \
-#     && rm Downloads/act_Linux_x86_64.tar.gz \
+# if [ -e "${download_dir}"/act_Linux_x86_64.tar.gz ]; then
+#        tar -xzf "${download_dir}"/act_Linux_x86_64.tar.gz act \
+#     && mv act "${binary_dir}"/act && chmod +x "${binary_dir}"/act \
+#     && rm "${download_dir}"/act_Linux_x86_64.tar.gz \
 #     && logsummary act "$(act --version)" 3
 # else
 #     echo "No upgrade"
@@ -284,35 +257,70 @@ fi
 
 # echo -e "# # # # # #\n\n# # # # # # delta"
 # log delta "$(delta --version)" 2
-# if stat -t Downloads/delta-*-x86_64-unknown-linux-*.tar.gz >/dev/null 2>&1; then
-#        tar --strip-components=1 --wildcards -xzf Downloads/delta-*-x86_64-unknown-linux-*.tar.gz \
+# if stat -t "${download_dir}"/delta-*-x86_64-unknown-linux-*.tar.gz >/dev/null 2>&1; then
+#        tar --strip-components=1 --wildcards -xzf "${download_dir}"/delta-*-x86_64-unknown-linux-*.tar.gz \
 #            delta-*-x86_64-unknown-linux-*/delta \
-#     && mv delta bin/ && chmod +x bin/delta \
-#     && rm Downloads/delta-*-x86_64-unknown-linux-*.tar.gz \
+#     && mv delta "${binary_dir}"/ && chmod +x "${binary_dir}"/delta \
+#     && rm "${download_dir}"/delta-*-x86_64-unknown-linux-*.tar.gz \
 #     && delta --generate-completion fish > "${completion_dir}/delta.fish" \
 #     && logsummary delta "$(delta --version)" 2
 # else
 #     echo "No upgrade"
 # fi
 
-# echo -e "# # # # # #\n\n# # # # # # aqua"
-# log aqua "$(aqua --version)" 3
-# if [ -e Downloads/aqua_linux_amd64.tar.gz ]; then
-#        tar -xzf Downloads/aqua_linux_amd64.tar.gz aqua \
-#     && mv aqua bin/aqua && chmod +x bin/aqua \
-#     && rm Downloads/aqua_linux_amd64.tar.gz \
-#     && aqua completion fish > "${completion_dir}/aqua.fish" \
-#     && logsummary aqua "$(aqua --version)" 3
+# echo -e "# # # # # #\n\n# # # # # # slides"
+# if stat -t "${download_dir}"/slides_*_linux_amd64.tar.gz >/dev/null 2>&1; then
+#        tar -xzf "${download_dir}"/slides_*_linux_amd64.tar.gz slides \
+#     && mv slides "${binary_dir}"/ && chmod +x "${binary_dir}"/slides \
+#     && rm "${download_dir}"/slides_*_linux_amd64.tar.gz \
+#     && logsummary slides 'upgraded (no version available)'
 # else
 #     echo "No upgrade"
 # fi
 
+# TODO: Deprecated
+echo -e "# # # # # #\n\n# # # # # # pre-commit"
+log pre-commit "$(pre-commit --version)" 2
+if stat -t "${download_dir}"/pre-commit-*.pyz >/dev/null 2>&1; then
+        mv "${download_dir}"/pre-commit-*.pyz "${install_dir}"/pre-commit.pyz && chmod +x "${install_dir}"/pre-commit.pyz \
+    && ln -sf "${binary_dir}"/pre-commit "${install_dir}"/pre-commit.pyz \
+    && logsummary pre-commit "$(pre-commit --version)" 2
+else
+    echo "No upgrade"
+fi
+
+# TODO: op
+
+echo -e "# # # # # #\n\n# # # # # # aqua"
+log aqua "$(aqua --version)" 3
+if [ -e "${download_dir}"/aqua_linux_amd64.tar.gz ]; then
+       tar -xzf "${download_dir}"/aqua_linux_amd64.tar.gz aqua \
+    && mv aqua "${binary_dir}"/aqua && chmod +x "${binary_dir}"/aqua \
+    && rm "${download_dir}"/aqua_linux_amd64.tar.gz \
+    && aqua completion fish > "${completion_dir}/aqua.fish" \
+    && logsummary aqua "$(aqua --version)" 3
+else
+    echo "No upgrade"
+fi
+
+
+echo -e "# # # # # #\n\n# # # # # # mise"
+log mise "$(mise --version)" 1
+if stat -t "${download_dir}"/mise-*-linux-x64 >/dev/null 2>&1; then
+       mv "${download_dir}"/mise-*-linux-x64 "${binary_dir}"/mise && chmod +x /.local/bin/mise \
+    && mise completion fish > "${completion_dir}/mise.fish" \
+    && logsummary mise "$(mise --version)" 1
+else
+    echo "No upgrade"
+fi
+
+
 echo -e "# # # # # #\n\n# # # # # # jetbrains-toolbox"
 log jetbrains-toolbox "$(jetbrains-toolbox --version)" 2
-if stat -t Downloads/jetbrains-toolbox-*.tar.gz >/dev/null 2>&1; then
-       tar --strip-components=1 --wildcards -xzf Downloads/jetbrains-toolbox-*.tar.gz jetbrains-toolbox-*/jetbrains-toolbox \
-    && mv jetbrains-toolbox .local/bin/ && chmod +x .local/bin/jetbrains-toolbox \
-    && rm Downloads/jetbrains-toolbox-*.tar.gz \
+if stat -t "${download_dir}"/jetbrains-toolbox-*.tar.gz >/dev/null 2>&1; then
+       tar --strip-components=1 --wildcards -xzf "${download_dir}"/jetbrains-toolbox-*.tar.gz jetbrains-toolbox-*/jetbrains-toolbox \
+    && mv jetbrains-toolbox "${binary_dir}"/ && chmod +x "${binary_dir}"/jetbrains-toolbox \
+    && rm "${download_dir}"/jetbrains-toolbox-*.tar.gz \
     && logsummary jetbrains-toolbox "$(jetbrains-toolbox --version)" 2
 else
     echo "No upgrade"
@@ -320,27 +328,31 @@ fi
 
 echo -e "# # # # # #\n\n# # # # # # espanso"
 log espanso "$(espanso --version)" 2
-if [ -e Downloads/Espanso-X11.AppImage ]; then
-        mv Downloads/Espanso-X11.AppImage software/ \
-    &&  chmod +x software/Espanso-X11.AppImage \
-    &&  ln -s "$(realpath software/Espanso-X11.AppImage)" .local/bin/espanso \
+if [ -e "${download_dir}"/Espanso-X11.AppImage ]; then
+        mv "${download_dir}"/Espanso-X11.AppImage "${install_dir}"/ \
+    &&  chmod +x "${install_dir}"/Espanso-X11.AppImage \
+    &&  ln -sf "$(realpath "${install_dir}"/Espanso-X11.AppImage)" "${binary_dir}"/espanso \
     &&  logsummary espanso "$(espanso --version)" 2
 else
     echo "No upgrade"
 fi
 
-echo -e "# # # # # #\n\n# # # # # # Debian Packages"
-shopt -s nullglob
-for d in Downloads/*.deb; do
-    package="$(dpkg --info "${d}" | grep Package | awk '{ print $2 }')"
-    new_version="$(dpkg --info "${d}" | grep Version | awk '{ print $2 }')"
-    old_version="$(apt show "${package}" 2> /dev/null | grep Version | awk '{ print $2 }')"
-    log "${package}" "${old_version}"
-    sudo dpkg -i "${d}" \
-        && rm "${d}" \
-        && logsummary "${package}" "${new_version}"
-done
-shopt -u nullglob
+if which dpkg > /dev/null 2>&1; then
+    echo -e "# # # # # #\n\n# # # # # # Debian Packages"
+    shopt -s nullglob
+    for d in "${download_dir}"/*.deb; do
+        package="$(dpkg --info "${d}" | grep Package | awk '{ print $2 }')"
+        new_version="$(dpkg --info "${d}" | grep Version | awk '{ print $2 }')"
+        old_version="$(apt show "${package}" 2> /dev/null | grep Version | awk '{ print $2 }')"
+        log "${package}" "${old_version}"
+        sudo dpkg -i "${d}" \
+            && rm "${d}" \
+            && logsummary "${package}" "${new_version}"
+    done
+    shopt -u nullglob
+fi
+
+# TODO: pacman packages (Zoom, and ... ?)
 
 echo -e "# # # # # #\n\n# # # # # # Summary"
 if [ $(wc -l < "${summary}") -gt 0 ]; then
