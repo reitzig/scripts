@@ -290,6 +290,7 @@ else
 fi
 
 # TODO: op
+# op completion fish > ~/.config/fish/completions/op.fish
 
 echo -e "# # # # # #\n\n# # # # # # aqua"
 log aqua "$(aqua --version)" 3
