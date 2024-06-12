@@ -4,12 +4,15 @@ set -euo pipefail
 
 echo "ℹ️ Maintaining user-space tools with aqua as per ${AQUA_GLOBAL_CONFIG}"
 
-export AQUA_GITHUB_TOKEN="$(op item get "GitHub" --field "PAT aqua")"
+# TODO: Move out of public script
+AQUA_GITHUB_TOKEN="$(op item get "GitHub" --field "PAT aqua")"
+export AQUA_GITHUB_TOKEN
 
-if which chezmoi 2>&1 > /dev/null; then
-    echo -e "\n⏬ Updating dotfiles ..."
+if which chezmoi > /dev/null 2>&1; then
+    echo -e "\n⏬ Updating $(basename "${AQUA_GLOBAL_CONFIG}") from dotfiles ..."
     chezmoi update --apply=false
-    chezmoi apply "${AQUA_GLOBAL_CONFIG}"
+    chezmoi apply "${AQUA_GLOBAL_CONFIG}" \
+        || chezmoi merge "${AQUA_GLOBAL_CONFIG}"
     echo -e "✅ Done"
 fi
 
@@ -17,9 +20,10 @@ export AQUA_LOG_COLOR=auto
 export AQUA_LOG_LEVEL=warn
 export AQUA_PROGRESS_BAR=true
 
-echo -e "\n⏬ Updating aqua ..."
-aqua upa
-echo -e "✅ Done"
+# TODO: Which is better, manual or this?
+# echo -e "\n⏬ Updating aqua ..."
+# aqua upa
+# echo -e "✅ Done"
 
 echo -e "\n⏬ Updating tools ..."
 aqua install -a
@@ -34,6 +38,7 @@ changie completion fish > "${completion_dir}/changie.fish"
 chezmoi completion fish > "${completion_dir}/chezmoi.fish"
 cog generate-completions fish > "${completion_dir}/cog.fish"
 delta --generate-completion fish > "${completion_dir}/delta.fish"
+gh completion -s fish > "${completion_dir}/gh.fish"
 golangci-lint completion fish > "${completion_dir}/golangci-lint.fish"
 goreleaser completion fish > "${completion_dir}/goreleaser.fish"
 helm completion fish > "${completion_dir}/helm.fish"
