@@ -1,7 +1,15 @@
-Assorted Shellscripts
-=======
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
+# Assorted Shellscripts
 
 This a just a collection of arguably useful shell scripts.
+
+⚠️ These are updated on the basis of "do I need something right now". Use at your own risk.
+
+### [`addcovers.rb`](https://github.com/reitzig/scripts/blob/master/addcovers.rb)
+
+Picks up album covers from canonical local locations, and 
+adds them to MP3 and FLAC files.
 
 ### [`canonify_imgnames`](https://github.com/reitzig/scripts/blob/master/canonify_imgnames)
 
