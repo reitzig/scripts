@@ -79,6 +79,10 @@ Removes obsolete RAW image files, i.e. such whose companion JPGs have been delet
 
 Provides a narrow interface to xrandr that allows you to switch easily between single, dual, and mirror screen setups. Tries to avoid some pitfalls like enabled but disconnected displays.
 
+### [`shelve-photos`](https://github.com/reitzig/scripts/blob/master/shelve-photos.sh)
+
+Interactively work through a list of photos and sort them into your folder-based collection.
+
 ### [`showqr`](https://github.com/reitzig/scripts/blob/master/showqr)
 
 Renders and displays text as qr-code.
