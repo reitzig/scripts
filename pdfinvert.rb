@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Copyright 2013, Raphael Reitzig
+# Copyright 2013-2020, Raphael Reitzig
 #
 # pdfinvert is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -62,14 +62,17 @@
 #
 # Requirements:
 #  * ruby
-#  * inkscape
+#  * inkscape >= 1.0
 #  * imagemagick
 #  * pdftk
 #  * gs
 
 require 'fileutils'
+require 'open3'
+require 'tmpdir'
 
-$DEBUG = false
+$DEBUG = true
+$FORCE_PDF = true  # TODO: make parameter?
 
 # # # # # # # # # # # # # # #
 # Init
@@ -123,7 +126,7 @@ elsif ( !File.exists?($input) )
   Process.exit 1;
 end
 
-$tmp = "/tmp/pdfinvert_#{$filename}"
+$tmp = Dir.mktmpdir("pdfinvert_#{$filename}_")
 $dir = Dir.pwd
 
 # Ensure that temporary directory exists and is empty
@@ -208,13 +211,16 @@ def invert(file)
   log = "Inverting #{file}...\n"
   basename = File.basename(file, ".pdf")
 
-  IO::popen("inkscape -l #{basename}.svg #{file} 2>&1") do |io|
-    log += io.readlines.join
-  end
+  # Or like so?
+  # status_list = Open3.pipeline("cat #{file}", "inkscape --pipe --export-type=svg", "cat - > #{basename}.svg")
+  # unless status_list.all? { |s| s.success? }
+
+  _, stderr, status = Open3.capture3("inkscape --pipe --export-type=svg < #{file} > #{basename}.svg")
   FileUtils.rm(file) if !$DEBUG
 
-  unless $?.success?
+  unless $?.success? # TODO: inkscape doesn't exit with error!
     log += "Conversion to SVG failed\n"
+    log += stderr
     return log
   end
 
@@ -224,6 +230,8 @@ def invert(file)
   #mv ${1%.pdf}a4.svg ${1%.pdf}.svg;
   # This does not rescale/fit!
 
+  # TODO: Replace with File.open(, "w") { File.foreach { }} ?
+  #       Would loading entire SVG to RAM.
   svg = []
   File.open("#{basename}.svg", "r") { |f|
     svg = f.readlines
@@ -249,46 +257,62 @@ def invert(file)
       File.open("#{basename}_#{imgctr}.b64", "w") { |f| f.write($~[2]) }
 
       # Convert base 64 string to image
-      IO::popen("base64 -d #{imgname}.b64 > #{imgname}.#{imgtype} 2>&1") do |io|
-        log += io.readlines.join
+      _, stderr, status = Open3.capture3("base64 -d #{imgname}.b64 > #{imgname}.#{imgtype}")
+      unless status.success?
+        log += "Image conversion from Base64 failed\n"
+        log += stderr
+        return log
       end
 
       # Remove border
       if ( $trimcolor != "" )
-        IO::popen("convert #{imgname}.#{imgtype} -bordercolor \"##{$trimcolor}\" " +
-                          "-border 1 -fill none -draw 'color 0,0 floodfill' -shave 1x1 +repage " +
-                          "#{imgname}.#{imgtype} 2>&1") do |io|
-            log += io.readlines.join
+        _, stderr, status = Open3.capture3(
+          "convert #{imgname}.#{imgtype} -bordercolor \"##{$trimcolor}\" " +
+          "-border 1 -fill none -draw 'color 0,0 floodfill' -shave 1x1 +repage " +
+          "#{imgname}.#{imgtype}")
+        unless status.success?
+          log += "Image border removal failed\n"
+          log += stderr
+          return log
         end
       end
 
       # Invert/replace colors
       if ( convertimage?(pnr, imgctr) )
         if ( $colors == "" )
-          IO::popen("convert #{imgname}.#{imgtype} -negate #{imgname}.#{imgtype} 2>&1") do |io|
-            log += io.readlines.join
+          _, stderr, status = Open3.capture3("convert #{imgname}.#{imgtype} -negate #{imgname}.#{imgtype}") do |io|
+          unless status.success?
+            log += "Image color inversion failed\n"
+            log += stderr
+            return log
           end
         else
           $colororder.each { |color|
             fuzz = $colorrules[color][0]
-            IO::popen("convert #{imgname}.#{imgtype} -fuzz #{fuzz}% " +
-                        "-fill \"##{replacecolor(color)}\" -opaque \"##{color}\" " +
-                        "#{imgname}.#{imgtype} 2>&1") do |io|
-                log += io.readlines.join
+            _, stderr, status = Open3.capture3(
+              "convert #{imgname}.#{imgtype} -fuzz #{fuzz}% " +
+              "-fill \"##{replacecolor(color)}\" -opaque \"##{color}\" " +
+              "#{imgname}.#{imgtype}")
+            unless status.success?
+              log += "Image color replacement failed\n"
+              log += stderr
+              return log
             end
           }
         end
       end
 
       # Convert back to base 64
-      IO::popen("base64 #{imgname}.#{imgtype} > #{imgname}.b64 2>&1") do |io|
-        log += io.readlines.join
+      image_as_b64, stderr, status = Open3.capture3("base64 #{imgname}.#{imgtype}")
+      unless status.success?
+        log += "Image conversion to Base64 failed\n"
+        log += stderr
+        return log
       end
 
-      result = "\"data:image/#{imgtype};base64,#{File.open("#{imgname}.b64", "r") { |f| result = f.readlines.join}}\""
+      result = "\"data:image/#{imgtype};base64,#{image_as_b64}\""
 
       # Cleanup
-      FileUtils.rm("#{imgname}.b64") if !$DEBUG
       FileUtils.rm("#{imgname}.#{imgtype}") if !$DEBUG
 
       result
@@ -321,19 +345,28 @@ def invert(file)
   }
 
   outbasename = sprintf("output_%04d", pnr)
-  IO::popen("inkscape -A #{outbasename}.pdf #{basename}_inv.svg 2>&1") do |io|
-    log += io.readlines.join
-  end
+  _, stderr, status = Open3.capture3("inkscape --pipe --export-type=pdf < #{basename}_inv.svg > #{outbasename}.pdf")
   FileUtils.rm("#{basename}_inv.svg") if !$DEBUG
-
-  # Change PDF size to A4. Nasty workaround.
-  IO::popen("gs -sOutputFile=#{outbasename}a4.pdf -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sPAPERSIZE=a4 " +
-               "-dFIXEDMEDIA -dPDFFitPage -q -f #{outbasename}.pdf 2>&1") do |io|
-      log += io.readlines.join
+  unless status.success? # TODO: inkscape doesn't exit with error!
+    log += "Conversion to PDF failed\n"
+    log += stderr
+    return log
   end
-  FileUtils.mv("#{outbasename}a4.pdf", "#{outbasename}.pdf")
 
-  log += "Done inverting #{file}.\n";
+  if $FORCE_PDF
+    # Change PDF size to A4. Nasty workaround.
+    _, stderr, status = Open3.capture3(
+      "gs -sOutputFile=#{outbasename}a4.pdf -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sPAPERSIZE=a4 " +
+      "-dFIXEDMEDIA -dPDFFitPage -q -f #{outbasename}.pdf")
+    unless status.success?
+      log += "PDF page size fix failed\n"
+      log += stderr
+      return log
+    end
+    FileUtils.mv("#{outbasename}a4.pdf", "#{outbasename}.pdf")
+  end
+
+  log += "Done inverting #{file}.\n"
   return log
 end
 
@@ -347,8 +380,9 @@ $input = File.basename($input)
 
 $log = ""
 
-IO::popen("pdftk #{$input} burst output #{$tmp}/input_%04d.pdf 2>&1") do |io|
-    $log += io.readlines.join
+stdouterr, status = Open3.capture2e("pdftk #{$input} burst output #{$tmp}/input_%04d.pdf")
+unless status.success?
+    $log += stdouterr
 end
 FileUtils.rm($input) if !$DEBUG
 FileUtils.rm("doc_data.txt") if !$DEBUG # Created by pdftk
@@ -373,8 +407,9 @@ if Dir["output*.pdf"].empty?
     $log += "No inverted pages found. Aborting.\n"
 else
     # Join pages together again
-    IO::popen("pdftk output*.pdf cat output output.pdf allow AllFeatures 2>&1") do |io|
-        $log += io.readlines.join
+    stdouterr, status = Open3.capture2e("pdftk output*.pdf cat output output.pdf allow AllFeatures")
+    unless status.success?
+        $log += stdouterr
     end
     Dir["output_*"].each { |f| FileUtils.rm(f) }
 end
