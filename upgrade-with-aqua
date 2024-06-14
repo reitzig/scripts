@@ -4,6 +4,7 @@ set -euo pipefail
 
 echo "ℹ️ Maintaining user-space tools with aqua as per ${AQUA_GLOBAL_CONFIG}"
 
+# TODO: Workflow to test aqua install
 # TODO: Move out of public script
 AQUA_GITHUB_TOKEN="$(op item get "GitHub" --field "PAT aqua")"
 export AQUA_GITHUB_TOKEN
