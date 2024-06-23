@@ -11,10 +11,15 @@ This a just a collection of arguably useful shell scripts.
 Picks up album covers from canonical local locations, and 
 adds them to MP3 and FLAC files.
 
+### [`canonical_imgname`](https://github.com/reitzig/scripts/blob/master/canonical_imgname)
+
+Derives a canonical filename for photos using EXIF data or certain filename patterns;
+the format is `YYYY-MM-DD hh.mm.ss`, that is for example `2021-09-09 11.25.38`.
+
 ### [`canonify_imgnames`](https://github.com/reitzig/scripts/blob/master/canonify_imgnames)
 
 Renames images using EXIF data or certain filename patterns so that they conform to a standard, 
-date-time-based naming scheme.
+datetime-based naming scheme.
 
 ### [`charge-reminder.go`](https://github.com/reitzig/scripts/blob/master/charge-reminder.go)
 

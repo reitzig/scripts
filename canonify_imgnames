@@ -1,80 +1,29 @@
 #!/usr/bin/env ruby
 
-# Copyright 2016--2019, Raphael Reitzig
+# Copyright 2016--2024, Raphael Reitzig
 #
-# canonimgnames is free software: you can redistribute it and/or modify
+# canonify_imgnames is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# canonimgnames is distributed in the hope that it will be useful,
+# canonify_imgnames is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with canonimgnames. If not, see <http://www.gnu.org/licenses/>.
+# along with canonify_imgnames. If not, see <http://www.gnu.org/licenses/>.
 
-# Depdends on `exiftool`
+# Depends on `exiftool`
+
 
 require 'fileutils'
 
-DEBUG = false
-DRY_RUN = false
+DEBUG = false unless Object.const_defined?(:DEBUG)
+DRY_RUN = false unless Object.const_defined?(:DRY_RUN)
 
-# Photos obtained directly from a camera are tagged
-date_from_exif = ->(file) do
-  def line_to_datetime(line)
-    #puts line if DEBUG
-    parts = line.split(/\s+:\s+/)
-    puts "   - #{parts.to_s}" if DEBUG
-    
-    if parts.size >= 2
-      if parts[0] == "Error"
-        nil
-      else
-        datetime = parts[1].split(/\s+/)
-        puts "     -> #{datetime.to_s}" if DEBUG
-        date = datetime[0].strip.gsub(":", "-")
-        time = datetime[1].split(/[\D]/)[0..2].join(".")
-        "#{date} #{time}"
-      end
-    else
-      nil
-    end
-  end
-
-  exif = `exiftool '#{file}' | grep -E "(Error|Create Date|Date/Time Original)"`
-  if exif.strip.size > 0
-    puts " - Found EXIF tags" if DEBUG
-    exif_results = exif.split("\n").map { |line| line_to_datetime(line) }.reject { |e| e.nil? }
-    if exif_results.empty?
-      puts " - No usable EXIF tags found: #{exif}" if DEBUG
-    else  
-      return exif_results.max # is that always the right thing to do?
-    end
-  end
-
-  return nil
-end
-
-# Images received via messengers sometimes don't have tags, 
-# but somewhat helpful filenames
-date_from_filename = ->(file) do
-  if file =~ /(?:IMG|VID)-(\d{4})(\d{2})(\d{2})-WA(\d+)/
-    puts " - Detected WhatsApp filename pattern" if DEBUG
-    "#{$~[1]}-#{$~[2]}-#{$~[3]} #{$~[4]}"
-  elsif file =~ /threema-(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})/
-    puts " - Detected Threema filename pattern" if DEBUG
-    "#{$~[1]}-#{$~[2]}-#{$~[3]} #{$~[4]}.#{$~[5]}.#{$~[6]}"
-  else
-    nil
-  end
-end
-
-def full_filename(file, new_base_name)
-  "#{File.dirname(file)}/#{new_base_name}#{File.extname(file)}"
-end
+require_relative 'canonical_imgname'
 
 renamed = 0
 ARGV.each { |file|
@@ -83,14 +32,10 @@ ARGV.each { |file|
 
   if File.exist?(file) && !File.directory?(file)
     puts file if DEBUG
-    
-    new_name = nil
-    [date_from_exif, date_from_filename].each { |parser| 
-      new_name = parser.call(file)
-      break unless new_name.nil?
-    }
 
-    if new_name.nil? 
+    new_name = canonical_image_name(file)
+
+    if new_name.nil?
       puts " - No better name found, skipping.\n\n" if DEBUG
       next
     elsif file == full_filename(file, new_name)
