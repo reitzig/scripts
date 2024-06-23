@@ -11,7 +11,7 @@ This a just a collection of arguably useful shell scripts.
 Picks up album covers from canonical local locations, and 
 adds them to MP3 and FLAC files.
 
-### [`canonical_imgname`](https://github.com/reitzig/scripts/blob/master/canonical_imgname)
+### [`canonical_imgname`](https://github.com/reitzig/scripts/blob/master/canonical_imgname.rb)
 
 Derives a canonical filename for photos using EXIF data or certain filename patterns;
 the format is `YYYY-MM-DD hh.mm.ss`, that is for example `2021-09-09 11.25.38`.
