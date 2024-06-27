@@ -11,6 +11,10 @@ This a just a collection of arguably useful shell scripts.
 Picks up album covers from canonical local locations, and 
 adds them to MP3 and FLAC files.
 
+### [`aquax`](https://github.com/reitzig/scripts/blob/master/aquax)
+
+Like [`pkgx`](https://docs.pkgx.sh/run-anywhere/scripts) but driven by [aquaproj/aqua](https://github.com/aquaproj/aqua).
+
 ### [`canonical_imgname`](https://github.com/reitzig/scripts/blob/master/canonical_imgname.rb)
 
 Derives a canonical filename for photos using EXIF data or certain filename patterns;

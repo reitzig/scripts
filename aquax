@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+export AQUA_CONFIG="$(mktemp --dry-run --suffix=_aqua.yaml)"
+aqua init "${AQUA_CONFIG}"
+
+for arg in "${@}"; do
+    if [[ $arg == +* ]]; then
+        aqua generate -i "${arg#+}"
+        shift
+    else
+        break
+    fi
+done
+
+aqua install
+
+"${@}"
