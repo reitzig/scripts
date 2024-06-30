@@ -15,13 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with shelve-photos.sh. If not, see <http://www.gnu.org/licenses/>.
 
-# Requires: feh, gum, xdotool, yq
+# Requires: feh, gum, mimetype, mplayer, xdotool, yq
 
 set -euo pipefail
 #set -x
 
 # IMAGE_VIEWER="eog"
 IMAGE_VIEWER="feh -d --draw-exif --scale-down"
+VIDEO_VIEWER="mplayer -loop 0 -fixed-vo -really-quiet -nolirc"
 TARGET_FOLDER_LIST="${HOME}/.local/state/shelve-photos-targets.yaml"
 CANONICAL_IMGNAME="$(dirname "$(realpath "${0}")")/canonical_imgname.rb"
 
@@ -30,11 +31,13 @@ BASE_TARGET_FOLDER='change it'
 # TODO: Dry-run -- only log "final" action
 # TODO: Option to copy instead of moving, no deletion
 # TODO: How to abort?
+# TODO: Handle RAWs "en passant"
+# TODO: Switch order of rename and target -- handle duplicates in the target dir by rename!
 
 if [ "${#}" -lt 2 ]; then
     echo "Usage: shelve-photos DIR FILE..."
 fi
-for tool in feh gum xdotool yq; do
+for tool in feh gum mimetype mplayer xdotool yq; do
     if ! which ${tool} > /dev/null 2>&1; then
         echo "FATAL ${tool} not found on PATH"
         exit 1
@@ -61,18 +64,34 @@ main() {
             gum log --level error "No such file: ${file}"
             continue
         fi
+        pid_viewer=''
+        case "$(mimetype -b "${file}")" in
+            image*)
+            ${IMAGE_VIEWER} "${file}" 2>&1 > /dev/null &
+            pid_viewer="${!}"
+            ;;
+            video*)
+            ${VIDEO_VIEWER} "${file}" 2>&1 > /dev/null &
+            pid_viewer="${!}"
+            ;;
+            *)
+            gum log --level error "Unsupported file of type $(mimetype -b "${file}")"
+            ;;
+        esac
 
-        ${IMAGE_VIEWER} "${file}" 2>&1 > /dev/null &
-        pid_viewer="${!}"
-        # Wait until window has opened (and grabbed focus):
-        xdotool search --sync --pid "${pid_viewer}" > /dev/null
-        # xdotool windowfocus --sync "$(xdotool search --sync --pid "${pid_viewer}")"
-        xdotool windowfocus --sync "${terminal_window}"
+        if [ -n "${pid_viewer}" ]; then
+            # Wait until window has opened (and grabbed focus):
+            xdotool search --sync --pid "${pid_viewer}" > /dev/null
+            # xdotool windowfocus --sync "$(xdotool search --sync --pid "${pid_viewer}")"
+            xdotool windowfocus --sync "${terminal_window}"
+        fi
 
         ask_keep "${file}"
 
-        kill "${pid_viewer}" 2>/dev/null || true
-        wait "${pid_viewer}" 2>/dev/null || true
+        if [ -n "${pid_viewer}" ]; then
+            kill "${pid_viewer}" 2>/dev/null || true
+            wait "${pid_viewer}" 2>/dev/null || true
+        fi
     done
 }
 
@@ -189,9 +208,12 @@ move() {
     file="${1}"
     target="${2}"
 
-    # TODO: check if we overwrite!
-    mv "${file}" "${target}"
-    gum log --level info "Shelved ${file} as ${target}"
+    if [ ! -f "${target}" ] || gum confirm "Overwrite existing ${target}" --default=No; then
+        mv "${file}" "${target}"
+        gum log --level info "Shelved ${file} as ${target}"
+    else
+        gum log --level warn "Skipped ${file} after almost overwriting ${target}"
+    fi
 }
 
 main "${@}"

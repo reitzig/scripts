@@ -50,7 +50,9 @@ def date_from_exif(file)
     if exif_results.empty?
       puts " - No usable EXIF tags found: #{exif}" if DEBUG
     else
-      return exif_results.max # is that always the right thing to do?
+      # Rationale: Prefer creation over modification date
+      # Is that always the right choice, though?
+      return exif_results.min
     end
   end
 
