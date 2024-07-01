@@ -1,0 +1,32 @@
+#!/usr/bin/env -S aquax +aquasecurity/trivy +jqlang/jq bash
+
+set -euo pipefail
+shopt -s extglob
+# set -x
+
+bin_dir="$(mktemp -d)"
+scan_result="${bin_dir}/result.json"
+
+aqua --log-level warn \
+    cp --all \
+    -o "${bin_dir}"
+du -sh "${bin_dir}"
+ls "${bin_dir}"
+
+trivy rootfs --no-progress --quiet  \
+    --ignore-unfixed \
+    --scanners vuln \
+    --format json \
+    --output "${scan_result}" \
+    "${bin_dir}"
+# TODO output fixed _and_ unfixed separately?
+
+jq '.Results | map({name: .Target, vulnerabilities: (.Vulnerabilities // []) | group_by(.Severity) | map({Severity: .[0].Severity, Count: length})}) | .[] | select(.vulnerabilities | length > 0)' \
+    < "${scan_result}"
+    # TODO: show flat, sorted list of "name\t#critical-#high-#medium
+jq 'try .Results | map(.Vulnerabilities[]?) | group_by(.Severity) | map({Severity: .[0].Severity, Count: length})' \
+    < "${scan_result}"
+    # TODO: show single-line summary
+
+rm -rf "${bin_dir:?}"/!(result.json)
+echo "Full report at ${scan_result}"
