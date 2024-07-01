@@ -15,6 +15,10 @@ adds them to MP3 and FLAC files.
 
 Like [`pkgx`](https://docs.pkgx.sh/run-anywhere/scripts) but driven by [aquaproj/aqua](https://github.com/aquaproj/aqua).
 
+### [`aqua-scan`](https://github.com/reitzig/scripts/blob/master/aqua-scan)
+
+Scans all tools installed with `aqua` for vulnerabilities using `trivy`.
+
 ### [`canonical_imgname`](https://github.com/reitzig/scripts/blob/master/canonical_imgname.rb)
 
 Derives a canonical filename for photos using EXIF data or certain filename patterns;
