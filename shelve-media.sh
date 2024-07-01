@@ -32,7 +32,6 @@ BASE_TARGET_FOLDER='change it'
 # TODO: Option to copy instead of moving, no deletion
 # TODO: How to abort?
 # TODO: Handle RAWs "en passant"
-# TODO: Switch order of rename and target -- handle duplicates in the target dir by rename!
 
 if [ "${#}" -lt 2 ]; then
     echo "Usage: shelve-photos DIR FILE..."
@@ -106,7 +105,7 @@ ask_keep() {
     in
         Yes)
         gum log --level debug "Keeping ${file}"
-        ask_rename "${file}"
+        ask_target "${file}"
         ;;
         No)
         gio trash "${file}"
@@ -118,36 +117,88 @@ ask_keep() {
     esac
 }
 
-ask_rename() {
+ask_target() {
     file="${1}"
 
+    target_dir=""
+    choice="$(gum choose \
+        $(_known_targets) \
+        "Other ..." \
+        --header="Choose target folder")"
+    case "${choice}"
+    in
+        Other*)
+        target_dir="$(gum file --directory "${BASE_TARGET_FOLDER}")"
+        ;;
+        *)
+        target_dir="${BASE_TARGET_FOLDER}/${choice}"
+        ;;
+    esac
+
+    _update_count "${target_dir}"
+    ask_rename "${file}" "${target_dir}"
+}
+
+ask_rename() {
+    file="${1}"
+    target_dir="${2}"
+
+    gum log --level debug "Relocating ${file} to ${target_dir}"
+
+    current_basename="$(basename "${file}")"
+    safe_option=""
     canonical_option=""
     ask_option="Yes ..."
-    canonical_filename="$(basename "$("${CANONICAL_IMGNAME}" "${file}" 2> /dev/null)")"
-    if [ -n "${canonical_filename}" ] \
-      && [ "${canonical_filename}" != "$(basename "${file}")" ];
+
+    safe_basename="$(_disambiguate "${current_basename}" "${target_dir}")"
+    if [ "${safe_basename}" != "${current_basename}" ]; then
+        safe_option="Yes, avoid overwrite: ${safe_basename}"
+        ask_option="Yes, other ..."
+    fi
+
+    canonical_basename="$(basename "$("${CANONICAL_IMGNAME}" "${file}" 2> /dev/null)")"
+    if [ -n "${canonical_basename}" ] \
+      && [ "${canonical_basename}" != "${current_basename}" ];
     then
-        canonical_option="Yes: ${canonical_filename}"
+        canonical_basename="$(_disambiguate "${canonical_basename}" "${target_dir}")"
+        canonical_option="Yes, standardize to: ${canonical_basename}"
         ask_option="Yes, other ..."
     fi
 
     choice="$(gum choose \
         "No" \
+        ${safe_option:+"${safe_option}"} \
         ${canonical_option:+"${canonical_option}"} \
         "${ask_option}" \
         --header="Rename ${file}?")"
     case "${choice}" \
     in
         No)
-        ask_target "${file}" "${file}"
+        move "${file}" "${target_dir}/${current_basename}"
         ;;
-        Yes:*)
-        ask_target "${file}" "${canonical_filename}"
+        Yes,\ avoid*)
+        move "${file}" "${target_dir}/${safe_basename}"
+        ;;
+        Yes,\ standardize*)
+        move "${file}" "${target_dir}/${canonical_basename}"
         ;;
         *)
-        target="$(gum input --value="${file}")"
-        ask_target "${file}" "${target}"
+        target="$(gum input --value="${current_basename}")"
+        move "${file}" "${target_dir}/${target}"
     esac
+}
+
+move() {
+    file="${1}"
+    target="${2}"
+
+    if [ ! -f "${target}" ] || gum confirm "Overwrite existing ${target}" --default=No; then
+        mv "${file}" "${target}"
+        gum log --level info "Shelved ${file} as ${target}"
+    else
+        gum log --level debug "Not overwriting ${target} with ${file}, retry ..."
+        ask_rename "${file}" "$(dirname "${target}")"
+    fi
 }
 
 _known_targets() {
@@ -179,41 +230,17 @@ _update_count() {
     yq -i "(.[] | select(.path == \"${target_dir}\") | .count) = ${count}" "${TARGET_FOLDER_LIST}"
 }
 
-ask_target() {
-    file="${1}"
-    target="${2}"
+_disambiguate() {
+    file_basename="${1}"
+    directory="${2}"
 
-    gum log --level debug "Relocating ${file} as ${target}"
-
-    target_dir=""
-    choice="$(gum choose \
-        $(_known_targets) \
-        "Other ..." \
-        --header="Choose target folder")"
-    case "${choice}"
-    in
-        Other*)
-        target_dir="$(gum file --directory "${BASE_TARGET_FOLDER}")"
-        ;;
-        *)
-        target_dir="${BASE_TARGET_FOLDER}/${choice}"
-        ;;
-    esac
-
-    _update_count "${target_dir}"
-    move "${file}" "${target_dir}/${target}"
-}
-
-move() {
-    file="${1}"
-    target="${2}"
-
-    if [ ! -f "${target}" ] || gum confirm "Overwrite existing ${target}" --default=No; then
-        mv "${file}" "${target}"
-        gum log --level info "Shelved ${file} as ${target}"
-    else
-        gum log --level warn "Skipped ${file} after almost overwriting ${target}"
-    fi
+    unique_basename="${file_basename}"
+    i=1
+    while [ -f "${directory}/${unique_basename}" ]; do
+        unique_basename="${file_basename%.*} (${i}).${file_basename##*.}"
+        i=$((i + 1))
+    done
+    echo "${unique_basename}"
 }
 
 main "${@}"
