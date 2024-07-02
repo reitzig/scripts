@@ -289,8 +289,20 @@ else
     echo "No upgrade"
 fi
 
-# TODO: op
-# op completion fish > ~/.config/fish/completions/op.fish
+echo -e "# # # # # #\n\n# # # # # # op"
+log op "$(op --version)" 1
+if stat -t "${download_dir}"/op_linux_amd64_v*.zip >/dev/null 2>&1; then
+    # As per https://developer.1password.com/docs/cli/get-started/#install
+        unzip -d "${binary_dir}" op.zip op \
+    &&  rm "${download_dir}"/op_linux_amd64_v*.zip \
+    &&  chgrp onepassword-cli "${binary_dir}"/op \
+    &&  chmod g+s "${binary_dir}"/op \
+    &&  chown root "${binary_dir}"/op \
+    &&  op completion fish > "${completion_dir}/op.fish" \
+    &&  logsummary op "$(op --version)" 1
+else
+    echo "No upgrade"
+fi
 
 echo -e "# # # # # #\n\n# # # # # # aqua"
 log aqua "$(aqua --version)" 3
@@ -353,7 +365,18 @@ if which dpkg > /dev/null 2>&1; then
     shopt -u nullglob
 fi
 
-# TODO: pacman packages (Zoom, and ... ?)
+if which pacman > /dev/null 2>&1; then
+    echo -e "# # # # # #\n\n# # # # # # Arch Packages"
+    shopt -s nullglob
+    # TODO: prior version?
+    # TODO: pass all archives to a single call of pacman?
+    for d in "${download_dir}"/*.pkg.tar.xz; do
+            sudo pacman -U "${d}" \
+        &&  rm "${d}"
+        # TODO: new version?
+    done
+    shopt -u nullglob
+fi
 
 echo -e "# # # # # #\n\n# # # # # # Summary"
 if [ $(wc -l < "${summary}") -gt 0 ]; then
