@@ -53,7 +53,7 @@ main() {
         exit 2
     fi
 
-    gum log --level debug "Shelving photos into ${BASE_TARGET_FOLDER}"
+    gum log --level debug "Shelving ${#} media files into ${BASE_TARGET_FOLDER}"
     gum log --level debug "Checking for target folders in ${TARGET_FOLDER_LIST}"
 
     terminal_window="$(xdotool getactivewindow)"
@@ -120,9 +120,13 @@ ask_keep() {
 ask_target() {
     file="${1}"
 
+    # This to handle spaces in folder names
+    # Credits: https://stackoverflow.com/a/73437773/539599, https://stackoverflow.com/a/32931403/539599
+    readarray -t known_targets < <( _known_targets )
+
     target_dir=""
     choice="$(gum choose \
-        $(_known_targets) \
+        "${known_targets[@]}" \
         "Other ..." \
         --header="Choose target folder")"
     case "${choice}"
