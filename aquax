@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 export AQUA_CONFIG="$(mktemp --dry-run --suffix=_aqua.yaml)"
 aqua init "${AQUA_CONFIG}"
 
