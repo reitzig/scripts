@@ -59,7 +59,11 @@ main() {
     terminal_window="$(xdotool getactivewindow)"
 
     for file in "${@}"; do
-        if [ ! -f "${file}" ]; then
+        if [ -d "${file}" ]; then
+            gum log --level debug "Skipping ${file}, it's a directory"
+            continue
+            # TODO: or ... shelve it as a whole?
+        elif [ ! -f "${file}" ]; then
             gum log --level error "No such file: ${file}"
             continue
         fi
