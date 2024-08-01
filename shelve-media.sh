@@ -129,7 +129,7 @@ ask_target() {
     readarray -t known_targets < <( _known_targets )
 
     target_dir=""
-    choice="$(gum choose \
+    choice="$(gum filter \
         "${known_targets[@]}" \
         "Other ..." \
         --header="Choose target folder")"
