@@ -293,11 +293,11 @@ echo -e "# # # # # #\n\n# # # # # # op"
 log op "$(op --version)" 1
 if stat -t "${download_dir}"/op_linux_amd64_v*.zip >/dev/null 2>&1; then
     # As per https://developer.1password.com/docs/cli/get-started/#install
-        unzip -d "${binary_dir}" op.zip op \
+        unzip -d "${binary_dir}" "${download_dir}"/op_linux_amd64_v*.zip op \
     &&  rm "${download_dir}"/op_linux_amd64_v*.zip \
-    &&  chgrp onepassword-cli "${binary_dir}"/op \
-    &&  chmod g+s "${binary_dir}"/op \
-    &&  chown root "${binary_dir}"/op \
+    &&  sudo chgrp onepassword-cli "${binary_dir}"/op \
+    &&  sudo chown root "${binary_dir}"/op \
+    &&  sudo chmod g+s "${binary_dir}"/op \
     &&  op completion fish > "${completion_dir}/op.fish" \
     &&  logsummary op "$(op --version)" 1
 else
