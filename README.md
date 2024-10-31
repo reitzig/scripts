@@ -29,6 +29,10 @@ datetime-based naming scheme.
 
 Periodically checks the current battery level and alerts the user if it is low (and not charging).
 
+### [`docker-tiny-ls`](https://github.com/reitzig/scripts/blob/master/docker-tiny-ls)
+
+A simple wrapper around `docker _ ls` that prints in a more narrow table format than the default.
+
 ### [`imgs2pdf`](https://github.com/reitzig/scripts/blob/master/imgs2pdf)
 
 Uses LaTeX to create a (portrait A4) PDF from the images passed as parameters.

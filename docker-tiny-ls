@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+case "${1}" in
+    image)
+        docker image ls --format 'table {{.Repository }}\t{{.Tag}}\t{{.Size}}'
+        ;;
+    container)
+        docker container ls --all --format 'table {{.Names}}\t{{.Status}}'
+        ;;
+    *)
+        echo 'What do you want to list? [image|container]'
+esac
