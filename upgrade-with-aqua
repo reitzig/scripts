@@ -28,6 +28,7 @@ export AQUA_PROGRESS_BAR=true
 
 echo -e "\n⏬ Updating tools ..."
 aqua install -a
+aqua vacuum -d 30
 echo -e "✅ Done"
 
 
