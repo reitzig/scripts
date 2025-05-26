@@ -33,6 +33,13 @@ Periodically checks the current battery level and alerts the user if it is low (
 
 A simple wrapper around `docker _ ls` that prints in a more narrow table format than the default.
 
+### [`git-current-ref`](https://github.com/reitzig/scripts/blob/master/git-current-ref.sh)
+
+Prints the prettiest description of the currently checked out Git revision:
+branch name, tag name, or short hash.
+
+_Credits_: [SO@64886613](https://stackoverflow.com/a/64886613)
+
 ### [`imgs2pdf`](https://github.com/reitzig/scripts/blob/master/imgs2pdf)
 
 Uses LaTeX to create a (portrait A4) PDF from the images passed as parameters.
