@@ -103,6 +103,11 @@ sort them into your folder-based collection.
 
 Renders and displays text as qr-code.
 
+### [`slugify`](https://github.com/reitzig/scripts/blob/master/slugify.sh)
+
+Convert the given "noisy" string, e.g. a Git branch name, to something that contains only letters, digits, dashes, underscores, and periods;
+this is compatible with Docker image tags, for instance.
+
 ### [`ssh-print.rb`](https://github.com/reitzig/scripts/blob/master/ssh-print.rb)
 
 A simple script that creates a printable PDF backup of an SSH key.
