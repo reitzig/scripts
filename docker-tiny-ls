@@ -2,7 +2,18 @@
 
 case "${1}" in
     image)
-        docker image ls --format 'table {{.Repository }}\t{{.Tag}}\t{{.Size}}'
+        docker image ls --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+        ;;
+    image-without-registry)
+        format="$(cat <<'GOTEMPLATE'
+          {{- $image := "" }}
+          {{- range split .Repository "/" }}
+            {{- $image = . }}
+          {{- end -}}
+          {{ $image }}\t{{.Tag}}\t{{.Size}}
+GOTEMPLATE
+        )"
+        docker image ls --format "table ${format}"
         ;;
     container)
         docker container ls --all --format 'table {{.Names}}\t{{.Status}}'
