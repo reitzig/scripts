@@ -40,6 +40,10 @@ branch name, tag name, or short hash.
 
 _Credits_: [SO@64886613](https://stackoverflow.com/a/64886613)
 
+### [`git-names-of-current-ref`](https://github.com/reitzig/scripts/blob/master/git-names-of-current-ref.sh)
+
+Prints the (short) names of all branch and tag refs pointing at the currently checked out Git revision.
+
 ### [`imgs2pdf`](https://github.com/reitzig/scripts/blob/master/imgs2pdf)
 
 Uses LaTeX to create a (portrait A4) PDF from the images passed as parameters.
