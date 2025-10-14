@@ -49,6 +49,11 @@ Prints the (short) names of all branch and tag refs pointing at the currently ch
 Uses LaTeX to create a (portrait A4) PDF from the images passed as parameters.
 Shrinks images to fit the page.
 
+### [`make-booklet.sh`](https://github.com/reitzig/scripts/blob/master/make-booklet.sh)
+
+Takes an A4 PDF, and rearranges pages so that an A4 duplex print can be
+(cut) and stapled into a booklet of the given format.
+
 ### [`mkimgpage.rb`](https://github.com/reitzig/scripts/blob/master/mkimgpage.rb)
 
 Takes a Markdown file with special image tags and creates an image gallery from it.
