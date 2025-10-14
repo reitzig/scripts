@@ -28,6 +28,10 @@ CANONICAL_IMGNAME="$(dirname "$(realpath "${0}")")/canonical_imgname.rb"
 
 BASE_TARGET_FOLDER='change it'
 
+export GUM_LOG_LEVEL=info
+export GUM_FILE_SIZE=false
+export GUM_FILE_PERMISSION=false
+
 # TODO: Dry-run -- only log "final" action
 # TODO: Option to copy instead of moving, no deletion
 # TODO: How to abort?
