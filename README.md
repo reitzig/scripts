@@ -86,6 +86,11 @@ You can also specify a more carefully chosen set of color replacement rules and 
 Splits PDFs into constant-sized chunks. Useful if you create bulk letters, numbered exams or similar and need one
 file per instance, e.g. for stapling printers.
 
+### [`process-pacnew`](https://github.com/reitzig/scripts/blob/master/process-pacnew)
+
+Running `pacman -Syu` can leave behind `*.pacnew` files when a (config) file changed in the package but also has local changes.
+This script iterates over such files, prompting the user to merge their local changes with the proposed updates.
+
 ### [`pullphotos`](https://github.com/reitzig/scripts/blob/master/pullphotos)
 
 Downloads photos from [compatible](http://www.gphoto.org/doc/manual/FAQ.html#FAQ-camera-support) cameras without
