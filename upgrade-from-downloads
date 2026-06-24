@@ -37,7 +37,7 @@ echo -e "# # # # # #\n\n# # # # # # op"
 log op "$(op --version)" 1
 if stat -t "${download_dir}"/op_linux_amd64_v*.zip >/dev/null 2>&1; then
     # As per https://developer.1password.com/docs/cli/get-started/#install
-        unzip -d "${binary_dir}" "${download_dir}"/op_linux_amd64_v*.zip op \
+    unzip -d "${binary_dir}" "${download_dir}"/op_linux_amd64_v*.zip op \
     &&  rm "${download_dir}"/op_linux_amd64_v*.zip \
     &&  sudo chgrp onepassword-cli "${binary_dir}"/op \
     &&  sudo chown root "${binary_dir}"/op \
@@ -49,15 +49,30 @@ else
 fi
 
 echo -e "# # # # # #\n\n# # # # # # espanso"
-log espanso "$(espanso --version)" 2
+log espanso "$(espanso --version)"
 if [ -e "${download_dir}"/Espanso-X11.AppImage ]; then
-        mv "${download_dir}"/Espanso-X11.AppImage "${install_dir}"/ \
+    mv "${download_dir}"/Espanso-X11.AppImage "${install_dir}"/ \
     &&  chmod +x "${install_dir}"/Espanso-X11.AppImage \
     &&  ln -sf "$(realpath "${install_dir}"/Espanso-X11.AppImage)" "${binary_dir}"/espanso \
     &&  logsummary espanso "$(espanso --version)" 2
 else
     echo "No upgrade"
 fi
+
+echo -e "# # # # # #\n\n# # # # # # AppImage"
+shopt -s nullglob
+for f in "${download_dir}"/*.AppImage; do
+    source_file="$(basename "${f}")"
+    target_file="${install_dir}/${source_file}"
+    target_link="$(echo "${source_file}" | sed -e 's/[-_].*//' -e 's/.*/\L&/')"
+
+    log "${target_link}" "unknown"
+    mv "${download_dir}/${source_file}" "${target_file}" \
+    &&  chmod +x "${target_file}" \
+    &&  ln -sf "$(realpath "${target_file}")" "${binary_dir}/${target_link}" \
+    &&  logsummary "${target_link}" "${source_file%.AppImage}"
+done
+shopt -u nullglob
 
 if which dpkg > /dev/null 2>&1; then
     echo -e "# # # # # #\n\n# # # # # # Debian Packages"
@@ -77,12 +92,15 @@ fi
 if which pacman > /dev/null 2>&1; then
     echo -e "# # # # # #\n\n# # # # # # Arch Packages"
     shopt -s nullglob
-    # TODO: prior version?
-    # TODO: pass all archives to a single call of pacman?
     for d in "${download_dir}"/*.pkg.tar.xz; do
-            sudo pacman -U "${d}" \
-        &&  rm "${d}"
-        # TODO: new version?
+        source_file="$(basename "${f}")"
+        package="$(echo "${source_file}" | sed -e 's/[-_].*//')"
+
+        # TODO: prior version?
+        log "${package}" "unknown"
+        sudo pacman -U "${d}" \
+        && rm "${d}" \
+        && logsummary "${package}" "${d%.pkg.tar.xz}"
     done
     shopt -u nullglob
 fi
