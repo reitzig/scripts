@@ -92,15 +92,15 @@ fi
 if which pacman > /dev/null 2>&1; then
     echo -e "# # # # # #\n\n# # # # # # Arch Packages"
     shopt -s nullglob
-    for d in "${download_dir}"/*.pkg.tar.xz; do
+    for f in "${download_dir}"/*.pkg.tar.xz; do
         source_file="$(basename "${f}")"
         package="$(echo "${source_file}" | sed -e 's/[-_].*//')"
 
         # TODO: prior version?
         log "${package}" "unknown"
-        sudo pacman -U "${d}" \
-        && rm "${d}" \
-        && logsummary "${package}" "${d%.pkg.tar.xz}"
+        sudo pacman -U "${f}" \
+        && rm "${f}" \
+        && logsummary "${package}" "${f%.pkg.tar.xz}"
     done
     shopt -u nullglob
 fi
