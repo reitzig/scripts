@@ -40,6 +40,12 @@ branch name, tag name, or short hash.
 
 _Credits_: [SO@64886613](https://stackoverflow.com/a/64886613)
 
+### [`git-edit-allowed-signers`](https://github.com/reitzig/scripts/blob/master/git-edit-allowed-signers.sh)
+
+Configure `git` to use a checkout-specific allowed-signers file for SSH signatures, and open it in an editor.
+
+_Credits_: [SO#79262868](https://stackoverflow.com/a/79262868/539599)
+
 ### [`git-names-of-current-ref`](https://github.com/reitzig/scripts/blob/master/git-names-of-current-ref.sh)
 
 Prints the (short) names of all branch and tag refs pointing at the currently checked out Git revision.
